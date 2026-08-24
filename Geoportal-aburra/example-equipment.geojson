@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Parque Calistenia El Poblado",
+        "tipo": "parque de calistenia"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.5678, 6.2134]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Gimnasio Medellín Norte",
+        "tipo": "gimnasio"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.5812, 6.2291]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Gimnasio Exterior Envigado",
+        "tipo": "gimnasio al aire libre"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.5387, 6.1598]
+      }
+    }
+  ]
+}
