@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -8,20 +8,14 @@ import JSZip from 'jszip';
 import { useMapContext } from '../context/MapContext';
 import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../constants/equipmentTypes';
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
+import { reprojectGeoJSON } from '../utils/gis/reproject';
 
-const defaultStyle = new Style({
-  stroke: new Stroke({ color: '#2563eb', width: 2 }),
-  fill: new Fill({ color: 'rgba(37, 99, 235, 0.15)' }),
-  image: new CircleStyle({
-    radius: 6,
-    fill: new Fill({ color: '#2563eb' }),
-    stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
-  }),
-});
+function getFeatureStyle(feature, activeEquipmentTypes) {
+  const type = feature.get('equipmentType');
+  if (!type) return null;
+  if (type && !activeEquipmentTypes[type]) return null;
 
-function getFeatureStyle(feature) {
-  const type = getEquipmentTypeFromProperties(feature?.getProperties?.() || feature?.properties || {});
-  const palette = EQUIPMENT_TYPE_STYLES[type] || EQUIPMENT_TYPE_STYLES['gimnasio'];
+  const palette = EQUIPMENT_TYPE_STYLES[type];
 
   return new Style({
     stroke: new Stroke({ color: palette.color, width: 2 }),
@@ -35,7 +29,13 @@ function getFeatureStyle(feature) {
 }
 
 export function useLayerLoader() {
-  const { map, addLayer } = useMapContext();
+  const { map, addLayer, layers, activeEquipmentTypes } = useMapContext();
+
+  useEffect(() => {
+    layers.forEach(({ olLayer }) => {
+      olLayer.setStyle((feature) => getFeatureStyle(feature, activeEquipmentTypes));
+    });
+  }, [layers, activeEquipmentTypes]);
 
   const addVectorLayer = useCallback(
     (geojson, sourceCode, name, crsLabel) => {
@@ -44,10 +44,14 @@ export function useLayerLoader() {
         featureProjection: map.getView().getProjection(),
       });
       const features = format.readFeatures(geojson);
+      features.forEach((feature) => {
+        const type = getEquipmentTypeFromProperties(feature.getProperties());
+        feature.set('equipmentType', type);
+      });
       const source = new VectorSource({ features });
       const olLayer = new VectorLayer({
         source,
-        style: (feature) => getFeatureStyle(feature),
+        style: (feature) => getFeatureStyle(feature, activeEquipmentTypes),
       });
       map.addLayer(olLayer);
 
@@ -66,7 +70,7 @@ export function useLayerLoader() {
         visible: true,
       });
     },
-    [map, addLayer]
+    [map, addLayer, activeEquipmentTypes]
   );
 
   /** Carga un archivo .geojson / .json */
@@ -78,6 +82,43 @@ export function useLayerLoader() {
       addVectorLayer(geojson, code, file.name, name);
     },
     [addVectorLayer]
+  );
+
+  /** Carga un GeoJSON publicado por la aplicación. */
+  const loadGeoJSONUrl = useCallback(
+    async (url, name) => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar ${name} (${response.status}).`);
+      }
+
+      const geojson = await response.json();
+      const { code, name: crsName } = detectGeojsonCrs(geojson);
+      addVectorLayer(geojson, code, name, crsName);
+    },
+    [addVectorLayer]
+  );
+
+  const reprojectLayerOnMap = useCallback(
+    (layer, targetCode) => {
+      const projectedGeojson = reprojectGeoJSON(layer.rawGeojson, layer.sourceCode, targetCode);
+      const format = new GeoJSON({
+        dataProjection: targetCode,
+        featureProjection: map.getView().getProjection(),
+      });
+      const features = format.readFeatures(projectedGeojson);
+
+      features.forEach((feature) => {
+        const type = getEquipmentTypeFromProperties(feature.getProperties());
+        feature.set('equipmentType', type);
+      });
+
+      const source = layer.olLayer.getSource();
+      source.clear();
+      source.addFeatures(features);
+      layer.olLayer.changed();
+    },
+    [map]
   );
 
   /** Carga un .zip con shapefile (.shp, .dbf, .prj, ...) */
@@ -126,5 +167,5 @@ export function useLayerLoader() {
     [loadGeoJSONFile, loadShapefileZip]
   );
 
-  return { loadFile };
+  return { loadFile, loadGeoJSONUrl, reprojectLayerOnMap };
 }

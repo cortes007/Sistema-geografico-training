@@ -1,16 +1,43 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapContext } from '../context/MapContext';
 import { CRS_OPTIONS } from '../config/crsDefinitions';
 import { useLayerLoader } from './useLayerLoader';
 import { downloadGeoJSON, reprojectGeoJSON } from '../utils/gis/reproject';
 
 export function useLayerManager() {
-  const { layers, toggleLayerVisibility, removeLayer } = useMapContext();
-  const { loadFile } = useLayerLoader();
+  const {
+    map,
+    layers,
+    toggleLayerVisibility,
+    removeLayer,
+    activeEquipmentTypes,
+    toggleEquipmentType,
+  } = useMapContext();
+  const { loadFile, loadGeoJSONUrl, reprojectLayerOnMap } = useLayerLoader();
   const inputRef = useRef(null);
+  const loadedMapRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [targetCrsByLayer, setTargetCrsByLayer] = useState({});
+
+  useEffect(() => {
+    if (!map || loadedMapRef.current === map) return;
+
+    loadedMapRef.current = map;
+    setError(null);
+    setLoading(true);
+
+    loadGeoJSONUrl(
+      `${import.meta.env.BASE_URL}data/parques_aburra.geojson`,
+      'parques_aburra.geojson'
+    )
+      .catch((err) => {
+        setError(err.message || 'No se pudo cargar la capa inicial.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [map, loadGeoJSONUrl]);
 
   const handleFileChange = useCallback(
     async (event) => {
@@ -41,6 +68,22 @@ export function useLayerManager() {
     );
   }, [targetCrsByLayer]);
 
+  const handleTargetCrsChange = useCallback(
+    (layerId, targetCode) => {
+      const layer = layers.find((item) => item.id === layerId);
+      if (!layer) return;
+
+      try {
+        reprojectLayerOnMap(layer, targetCode);
+        setTargetCrsByLayer((prev) => ({ ...prev, [layerId]: targetCode }));
+        setError(null);
+      } catch (err) {
+        setError(err.message || 'No se pudo reproyectar la capa.');
+      }
+    },
+    [layers, reprojectLayerOnMap]
+  );
+
   const openFilePicker = useCallback(() => {
     inputRef.current?.click();
   }, []);
@@ -51,12 +94,14 @@ export function useLayerManager() {
     loading,
     error,
     targetCrsByLayer,
-    setTargetCrsByLayer,
+    handleTargetCrsChange,
     handleFileChange,
     handleDownload,
     openFilePicker,
     toggleLayerVisibility,
     removeLayer,
+    activeEquipmentTypes,
+    toggleEquipmentType,
     crsOptions: CRS_OPTIONS,
   };
 }

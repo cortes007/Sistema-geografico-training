@@ -1,5 +1,6 @@
 import { Upload, Eye, EyeOff, Trash2, Download, Loader2 } from 'lucide-react';
 import { useLayerManager } from '../../hooks/useLayerManager';
+import { EQUIPMENT_TYPES, EQUIPMENT_TYPE_STYLES } from '../../constants/equipmentTypes';
 
 export default function LayerPanel() {
   const {
@@ -8,12 +9,14 @@ export default function LayerPanel() {
     loading,
     error,
     targetCrsByLayer,
-    setTargetCrsByLayer,
     handleFileChange,
     handleDownload,
+    handleTargetCrsChange,
     openFilePicker,
     toggleLayerVisibility,
     removeLayer,
+    activeEquipmentTypes,
+    toggleEquipmentType,
     crsOptions,
   } = useLayerManager();
 
@@ -35,6 +38,29 @@ export default function LayerPanel() {
           onChange={handleFileChange}
         />
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      </div>
+
+      <div className="border-y border-gray-200 py-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Filtrar equipamiento
+        </h2>
+        <div className="flex flex-col gap-2">
+          {Object.values(EQUIPMENT_TYPES).map((type) => (
+            <label key={type} className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={activeEquipmentTypes[type]}
+                onChange={() => toggleEquipmentType(type)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: EQUIPMENT_TYPE_STYLES[type].color }}
+              />
+              {EQUIPMENT_TYPE_STYLES[type].label}
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -62,11 +88,10 @@ export default function LayerPanel() {
 
             <div className="mt-2 flex items-center gap-1">
               <select
+                aria-label={`CRS de visualización para ${layer.name}`}
                 className="flex-1 rounded border border-gray-300 bg-white px-1 py-1 text-xs"
                 value={targetCrsByLayer[layer.id] || 'EPSG:4326'}
-                onChange={(e) =>
-                  setTargetCrsByLayer((prev) => ({ ...prev, [layer.id]: e.target.value }))
-                }
+                onChange={(e) => handleTargetCrsChange(layer.id, e.target.value)}
               >
                 {crsOptions.map((opt) => (
                   <option key={opt.code} value={opt.code}>{opt.label}</option>

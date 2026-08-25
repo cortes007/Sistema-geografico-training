@@ -23,43 +23,41 @@ export const EQUIPMENT_TYPE_STYLES = {
 };
 
 export function getEquipmentTypeFromProperties(properties = {}) {
-  const rawType = (
-    properties.tipo ||
-    properties.categoria ||
-    properties.type ||
-    properties.equipmentType ||
-    properties.leisure ||
-    properties.amenity ||
-    properties.sport ||
-    properties.tag ||
-    ''
-  ).toString().trim().toLowerCase();
+  const values = Object.values(properties)
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => value.toString().trim().toLowerCase());
+  const text = values.join(' ');
 
-  if (!rawType) return null;
+  if (text.includes('calistenia') || text.includes('calisthenics')) {
+    return EQUIPMENT_TYPES.park;
+  }
 
-  const aliases = {
-    parque: EQUIPMENT_TYPES.park,
-    'parque de calistenia': EQUIPMENT_TYPES.park,
-    calistenia: EQUIPMENT_TYPES.park,
-    gym: EQUIPMENT_TYPES.gym,
-    gimnasio: EQUIPMENT_TYPES.gym,
-    fitness: EQUIPMENT_TYPES.gym,
-    'fitness_centre': EQUIPMENT_TYPES.gym,
-    'fitness_station': EQUIPMENT_TYPES.park,
-    'sports_centre': EQUIPMENT_TYPES.outdoorGym,
-    'sport_centre': EQUIPMENT_TYPES.outdoorGym,
-    'gimnasio al aire libre': EQUIPMENT_TYPES.outdoorGym,
-    exterior: EQUIPMENT_TYPES.outdoorGym,
-    outdoors: EQUIPMENT_TYPES.outdoorGym,
-    openair: EQUIPMENT_TYPES.outdoorGym,
-    open_air: EQUIPMENT_TYPES.outdoorGym,
-    outdoor: EQUIPMENT_TYPES.outdoorGym,
-    swimming: EQUIPMENT_TYPES.gym,
-    soccer: EQUIPMENT_TYPES.outdoorGym,
-    basketball: EQUIPMENT_TYPES.outdoorGym,
-    volleyball: EQUIPMENT_TYPES.outdoorGym,
-    climbing: EQUIPMENT_TYPES.outdoorGym,
-  };
+  if (values.includes('fitness_station')) {
+    return EQUIPMENT_TYPES.outdoorGym;
+  }
 
-  return aliases[rawType] || null;
+  if (values.includes('fitness_centre') || values.includes('fitness_center')) {
+    return EQUIPMENT_TYPES.gym;
+  }
+
+  if (
+    values.includes('gimnasio') ||
+    values.includes('gym') ||
+    values.includes('fitness')
+  ) {
+    return EQUIPMENT_TYPES.gym;
+  }
+
+  if (
+    text.includes('gimnasio al aire libre') ||
+    values.includes('exterior') ||
+    values.includes('outdoors') ||
+    values.includes('openair') ||
+    values.includes('open_air') ||
+    values.includes('outdoor')
+  ) {
+    return EQUIPMENT_TYPES.outdoorGym;
+  }
+
+  return null;
 }
