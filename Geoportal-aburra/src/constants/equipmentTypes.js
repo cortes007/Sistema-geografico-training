@@ -1,24 +1,18 @@
 export const EQUIPMENT_TYPES = {
-  park: 'parque de calistenia',
   gym: 'gimnasio',
   outdoorGym: 'gimnasio al aire libre',
 };
 
 export const EQUIPMENT_TYPE_STYLES = {
-  [EQUIPMENT_TYPES.park]: {
-    color: '#22c55e',
-    fill: 'rgba(34, 197, 94, 0.2)',
-    label: 'Parque de calistenia',
-  },
   [EQUIPMENT_TYPES.gym]: {
     color: '#2563eb',
     fill: 'rgba(37, 99, 235, 0.2)',
     label: 'Gimnasio',
   },
   [EQUIPMENT_TYPES.outdoorGym]: {
-    color: '#f59e0b',
-    fill: 'rgba(245, 158, 11, 0.2)',
-    label: 'Gimnasio al aire libre',
+    color: '#15b818',
+    fill: 'rgba(128, 245, 11, 0.2)',
+    label: 'Training al aire libre',
   },
 };
 
@@ -29,7 +23,7 @@ export function getEquipmentTypeFromProperties(properties = {}) {
   const text = values.join(' ');
 
   if (text.includes('calistenia') || text.includes('calisthenics')) {
-    return EQUIPMENT_TYPES.park;
+    return EQUIPMENT_TYPES.outdoorGym;
   }
 
   if (values.includes('fitness_station')) {

@@ -63,6 +63,9 @@ Tailwind CSS, su integración con Vite y los iconos también forman parte de las
 npm install tailwindcss @tailwindcss/vite lucide-react
 ```
 
+```bash
+npm install jszip
+```
 > Si ya se ejecutó `npm install`, no es necesario repetir los comandos individuales. El archivo `package.json` contiene las dependencias necesarias.
 
 ## Ejecución
