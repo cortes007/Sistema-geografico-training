@@ -10,9 +10,19 @@ import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../consta
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
 
+const neutralFeatureStyle = new Style({
+  stroke: new Stroke({ color: '#6b7280', width: 2 }),
+  fill: new Fill({ color: 'rgba(107, 114, 128, 0.14)' }),
+  image: new CircleStyle({
+    radius: 5,
+    fill: new Fill({ color: '#6b7280' }),
+    stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
+  }),
+});
+
 function getFeatureStyle(feature, activeEquipmentTypes) {
   const type = feature.get('equipmentType');
-  if (!type) return null;
+  if (!type) return neutralFeatureStyle;
   if (type && !activeEquipmentTypes[type]) return null;
 
   const palette = EQUIPMENT_TYPE_STYLES[type];

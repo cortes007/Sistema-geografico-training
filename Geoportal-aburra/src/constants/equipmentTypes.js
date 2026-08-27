@@ -1,6 +1,7 @@
 export const EQUIPMENT_TYPES = {
   gym: 'gimnasio',
   outdoorGym: 'gimnasio al aire libre',
+  sportsCentre: 'centro deportivo',
 };
 
 export const EQUIPMENT_TYPE_STYLES = {
@@ -14,6 +15,11 @@ export const EQUIPMENT_TYPE_STYLES = {
     fill: 'rgba(128, 245, 11, 0.2)',
     label: 'Training al aire libre',
   },
+  [EQUIPMENT_TYPES.sportsCentre]: {
+    color: '#dc2626',
+    fill: 'rgba(220, 38, 38, 0.2)',
+    label: 'Centros deportivos',
+  },
 };
 
 export function getEquipmentTypeFromProperties(properties = {}) {
@@ -24,6 +30,10 @@ export function getEquipmentTypeFromProperties(properties = {}) {
 
   if (text.includes('calistenia') || text.includes('calisthenics')) {
     return EQUIPMENT_TYPES.outdoorGym;
+  }
+
+  if (values.includes('sports_centre') || values.includes('sport_centre')) {
+    return EQUIPMENT_TYPES.sportsCentre;
   }
 
   if (values.includes('fitness_station')) {
