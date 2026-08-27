@@ -1,4 +1,13 @@
-import { Upload, Eye, EyeOff, Trash2, Download, Loader2 } from 'lucide-react';
+import {
+  Upload,
+  Eye,
+  EyeOff,
+  Trash2,
+  Download,
+  Loader2,
+  ArrowRightLeft,
+  CheckCircle2,
+} from 'lucide-react';
 import { useLayerManager } from '../../hooks/useLayerManager';
 import { EQUIPMENT_TYPES, EQUIPMENT_TYPE_STYLES } from '../../constants/equipmentTypes';
 
@@ -18,6 +27,7 @@ export default function LayerPanel() {
     activeEquipmentTypes,
     toggleEquipmentType,
     crsOptions,
+    getCrsDetails,
   } = useLayerManager();
 
   return (
@@ -70,6 +80,14 @@ export default function LayerPanel() {
 
         {layers.map((layer) => (
           <div key={layer.id} className="rounded-md border border-gray-200 p-2 text-sm">
+            {(() => {
+              const targetCode = targetCrsByLayer[layer.id] || 'EPSG:4326';
+              const source = getCrsDetails(layer.sourceCode);
+              const target = getCrsDetails(targetCode);
+              const isReprojected = layer.sourceCode !== targetCode;
+
+              return (
+                <>
             <div className="flex items-center justify-between">
               <span className="truncate font-medium" title={layer.name}>{layer.name}</span>
               <div className="flex items-center gap-1">
@@ -83,8 +101,37 @@ export default function LayerPanel() {
             </div>
 
             <p className="mt-1 text-xs text-gray-500">
-              CRS detectado: <span className="font-medium text-gray-700">{layer.sourceCRS}</span>
+              CRS original: <span className="font-medium text-gray-700">{layer.sourceCRS}</span>
             </p>
+
+            <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-2">
+              <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+                Transformación aplicada
+              </div>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-xs">
+                <div>
+                  <p className="text-[10px] uppercase text-gray-400">Origen</p>
+                  <p className="font-semibold text-gray-700">{source.code}</p>
+                  <p className="truncate text-[10px] text-gray-500" title={source.label}>{source.label}</p>
+                  <p className="text-[10px] text-gray-400">Unidad: {source.unit}</p>
+                </div>
+                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                <div className="text-right">
+                  <p className="text-[10px] uppercase text-gray-400">Destino</p>
+                  <p className="font-semibold text-blue-700">{target.code}</p>
+                  <p className="truncate text-[10px] text-gray-500" title={target.label}>{target.label}</p>
+                  <p className="text-[10px] text-gray-400">Unidad: {target.unit}</p>
+                </div>
+              </div>
+              <p className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${isReprojected ? 'text-emerald-700' : 'text-gray-500'}`}>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {isReprojected ? 'Capa reproyectada al CRS destino' : 'Capa en su CRS original'}
+              </p>
+              <p className="mt-1 text-[10px] text-gray-400">
+                Vista del mapa: EPSG:3857. La posición geográfica se conserva.
+              </p>
+            </div>
 
             <div className="mt-2 flex items-center gap-1">
               <select
@@ -105,6 +152,9 @@ export default function LayerPanel() {
                 <Download className="h-4 w-4" />
               </button>
             </div>
+                </>
+              );
+            })()}
           </div>
         ))}
       </div>

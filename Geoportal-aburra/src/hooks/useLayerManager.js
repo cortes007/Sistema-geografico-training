@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapContext } from '../context/MapContext';
-import { CRS_OPTIONS } from '../config/crsDefinitions';
+import { CRS_OPTIONS, getCrsLabel } from '../config/crsDefinitions';
 import { useLayerLoader } from './useLayerLoader';
 import { downloadGeoJSON, reprojectGeoJSON } from '../utils/gis/reproject';
 
@@ -88,6 +88,15 @@ export function useLayerManager() {
     inputRef.current?.click();
   }, []);
 
+  const getCrsDetails = useCallback((code) => {
+    const option = CRS_OPTIONS.find((item) => item.code === code);
+    return {
+      code,
+      label: option?.label || getCrsLabel(code),
+      unit: option?.unit || 'unidades',
+    };
+  }, []);
+
   return {
     inputRef,
     layers,
@@ -103,5 +112,6 @@ export function useLayerManager() {
     activeEquipmentTypes,
     toggleEquipmentType,
     crsOptions: CRS_OPTIONS,
+    getCrsDetails,
   };
 }
