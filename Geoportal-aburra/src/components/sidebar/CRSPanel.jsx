@@ -9,7 +9,7 @@ export default function CRSPanel() {
     <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
       <label className="text-xs font-medium text-gray-600">Sistema de referencia para coordenadas</label>
       <select
-        className="rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
+        className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
         value={activeCRS}
         onChange={(e) => setActiveCRS(e.target.value)}
       >

@@ -26,7 +26,7 @@ export const CRS_DEFS = {
 export const CRS_OPTIONS = [
   { code: 'EPSG:4326', label: 'WGS 84 (geográficas)', unit: 'grados' },
   { code: 'EPSG:32618', label: 'UTM zona 18N (WGS84)', unit: 'metros' },
-  { code: 'EPSG:9377', label: 'MAGNA-SIRGAS / Origen-Nacional', unit: 'metros' },
+  { code: 'EPSG:9377', label: 'MAGNA-SIRGAS / O.N.', unit: 'metros' },
   { code: 'EPSG:3116', label: 'MAGNA-SIRGAS / Bogotá', unit: 'metros' },
 ];
 

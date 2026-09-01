@@ -8,6 +8,7 @@ export function MapProvider({ children }) {
   const [layers, setLayers] = useState([]); // { id, name, olLayer, sourceCRS, sourceCode, rawGeojson, visible }
   const [activeCRS, setActiveCRS] = useState('EPSG:4326');
   const [capturedCoord, setCapturedCoord] = useState(null); // [x, y] en EPSG:3857
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [activeEquipmentTypes, setActiveEquipmentTypes] = useState(() =>
     Object.values(EQUIPMENT_TYPES).reduce((types, type) => ({ ...types, [type]: true }), {})
   );
@@ -41,6 +42,10 @@ export function MapProvider({ children }) {
     setActiveEquipmentTypes((prev) => ({ ...prev, [type]: !prev[type] }));
   }, []);
 
+  const clearSelectedPlace = useCallback(() => {
+    setSelectedPlace(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       map,
@@ -53,6 +58,9 @@ export function MapProvider({ children }) {
       setActiveCRS,
       capturedCoord,
       setCapturedCoord,
+      selectedPlace,
+      setSelectedPlace,
+      clearSelectedPlace,
       activeEquipmentTypes,
       toggleEquipmentType,
     }),
@@ -64,6 +72,8 @@ export function MapProvider({ children }) {
       toggleLayerVisibility,
       activeCRS,
       capturedCoord,
+      selectedPlace,
+      clearSelectedPlace,
       activeEquipmentTypes,
       toggleEquipmentType,
     ]
