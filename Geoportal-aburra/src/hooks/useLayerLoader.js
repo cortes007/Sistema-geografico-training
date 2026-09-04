@@ -10,32 +10,24 @@ import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../consta
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
 
-const neutralFeatureStyle = new Style({
-  stroke: new Stroke({ color: '#6b7280', width: 2 }),
-  fill: new Fill({ color: 'rgba(107, 114, 128, 0.14)' }),
-  image: new CircleStyle({
-    radius: 5,
-    fill: new Fill({ color: '#6b7280' }),
-    stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
-  }),
-});
+function createMarkerStyle(color) {
+  return new Style({
+    image: new CircleStyle({
+      radius: 6,
+      fill: new Fill({ color }),
+      stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
+    }),
+  });
+}
 
 function getFeatureStyle(feature, activeEquipmentTypes) {
   const type = feature.get('equipmentType');
-  if (!type) return neutralFeatureStyle;
+  if (!type) return createMarkerStyle('#64748b');
   if (type && !activeEquipmentTypes[type]) return null;
 
   const palette = EQUIPMENT_TYPE_STYLES[type];
 
-  return new Style({
-    stroke: new Stroke({ color: palette.color, width: 2 }),
-    fill: new Fill({ color: palette.fill }),
-    image: new CircleStyle({
-      radius: 6,
-      fill: new Fill({ color: palette.color }),
-      stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
-    }),
-  });
+  return createMarkerStyle(palette.color);
 }
 
 export function useLayerLoader() {
@@ -72,6 +64,7 @@ export function useLayerLoader() {
 
       addLayer({
         id: crypto.randomUUID(),
+        layerKey: `${name}|${sourceCode}`,
         name,
         olLayer,
         sourceCode,

@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { EQUIPMENT_TYPES } from '../constants/equipmentTypes';
 
 const MapContext = createContext(null);
@@ -14,16 +15,44 @@ export function MapProvider({ children }) {
   );
 
   const addLayer = useCallback((layer) => {
-    setLayers((prev) => [...prev, layer]);
-  }, []);
-
-  const removeLayer = useCallback((id) => {
     setLayers((prev) => {
-      const target = prev.find((l) => l.id === id);
-      if (target && map) map.removeLayer(target.olLayer);
-      return prev.filter((l) => l.id !== id);
+      if (layer.layerKey && prev.some((item) => item.layerKey === layer.layerKey)) {
+        if (map) map.removeLayer(layer.olLayer);
+        return prev;
+      }
+
+      return [...prev, layer];
     });
   }, [map]);
+
+  const removeLayer = useCallback((id) => {
+    const target = layers.find((layer) => layer.id === id);
+    if (!target) return;
+
+    if (map) map.removeLayer(target.olLayer);
+    const remainingLayers = layers.filter((layer) => layer.id !== id);
+    setLayers(remainingLayers);
+
+    if (selectedPlace?.feature && target.olLayer.getSource()?.hasFeature(selectedPlace.feature)) {
+      setSelectedPlace(null);
+    }
+
+    if (!map || remainingLayers.length === 0) return;
+
+    const remainingExtent = createEmpty();
+    remainingLayers.forEach(({ olLayer }) => {
+      const extent = olLayer.getSource()?.getExtent();
+      if (extent && extent.every(Number.isFinite)) extend(remainingExtent, extent);
+    });
+
+    if (!isEmpty(remainingExtent)) {
+      map.getView().fit(remainingExtent, {
+        padding: [40, 40, 40, 40],
+        maxZoom: 17,
+        duration: 400,
+      });
+    }
+  }, [layers, map, selectedPlace]);
 
   const toggleLayerVisibility = useCallback((id) => {
     setLayers((prev) =>

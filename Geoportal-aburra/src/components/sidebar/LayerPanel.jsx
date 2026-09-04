@@ -86,7 +86,7 @@ export default function LayerPanel() {
         )}
 
         {layers.map((layer) => (
-          <div key={layer.id} className="rounded-md border border-gray-200 p-2 text-sm">
+          <div key={layer.id} className="rounded-xl bg-white p-2 text-sm shadow-sm">
             {(() => {
               const targetCode = targetCrsByLayer[layer.id] || 'EPSG:4326';
               const source = getCrsDetails(layer.sourceCode);
