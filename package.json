@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "wkt-parser": "^1.5.6"
+  }
+}
