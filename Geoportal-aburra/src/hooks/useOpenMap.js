@@ -4,7 +4,6 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { fromLonLat } from 'ol/proj';
-import { defaults as defaultControls } from 'ol/control'; // Importamos los controles por defecto
 import { useMapContext } from '../context/MapContext';
 
 // Centro aproximado del Valle de Aburrá (sur del valle, Medellín/Envigado)
@@ -23,7 +22,7 @@ export function useOpenMap(targetRef) {
 
     const olMap = new Map({
       target: targetRef.current,
-      controls: defaultControls({ zoom: false }), // Desactivamos el botón de zoom nativo (+) y (-)
+      controls: [],
       layers: [
         new TileLayer({
           source: new OSM(), // atribución OSM incluida por defecto

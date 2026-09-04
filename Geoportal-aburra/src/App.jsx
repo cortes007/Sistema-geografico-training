@@ -25,28 +25,7 @@ function PlaceDetailsCard({ onBack }) {
 
       try {
         const result = await getPlacePhoto(selectedPlace.feature);
-        if (!result || result.isPlaceholder) {
-          if (!cancelled) setPhotoState({ loading: false, photo: result });
-          return;
-        }
-
-        const image = new Image();
-        image.decoding = 'async';
-        image.fetchPriority = 'high';
-        image.src = result.thumbUrl || result.url;
-        const loaded = await new Promise((resolve) => {
-          const timeoutId = window.setTimeout(() => resolve(false), 8000);
-          const finish = (success) => {
-            window.clearTimeout(timeoutId);
-            resolve(success);
-          };
-          image.onload = () => finish(true);
-          image.onerror = () => finish(false);
-        });
-
-        if (!cancelled) {
-          setPhotoState({ loading: false, photo: loaded ? result : null });
-        }
+        if (!cancelled) setPhotoState({ loading: false, photo: result });
       } catch {
         if (!cancelled) setPhotoState({ loading: false, photo: null });
       }
