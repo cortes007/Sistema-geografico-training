@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Compass, Layers, Minus, Plus } from 'lucide-react';
+import { Compass, Layers } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
 
 export default function MapControls() {
@@ -31,11 +31,6 @@ export default function MapControls() {
     satellite.setVisible(nextSatellite);
     streets.setVisible(!nextSatellite);
     setIsSatellite(nextSatellite);
-  };
-
-  const zoom = (delta) => {
-    const view = map.getView();
-    view.animate({ zoom: view.getZoom() + delta, duration: 200 });
   };
 
   const resetNorth = (event) => {
@@ -97,12 +92,6 @@ export default function MapControls() {
         className="flex h-11 w-11 touch-none items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
       >
         <Compass className="h-5 w-5 transition-transform" style={{ transform: `rotate(${rotation}rad)` }} />
-      </button>
-      <button type="button" onClick={() => zoom(1)} title="Acercar" className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100">
-        <Plus className="h-5 w-5" />
-      </button>
-      <button type="button" onClick={() => zoom(-1)} title="Alejar" className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100">
-        <Minus className="h-5 w-5" />
       </button>
     </div>
   );

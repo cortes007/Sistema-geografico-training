@@ -2,7 +2,8 @@ import { toLonLat } from 'ol/proj';
 
 const photoCache = new Map(); // featureId -> resultado (o null)
 const photoRequests = new Map(); // featureId -> promesa en curso
-const MAPILLARY_TIMEOUT_MS = 6000;
+const EXTERNAL_REQUEST_TIMEOUT_MS = 3500;
+const MAPILLARY_TIMEOUT_MS = 3500;
 
 export async function getPlacePhoto(feature) {
   const props = feature.getProperties();
@@ -58,6 +59,22 @@ export async function getPlacePhoto(feature) {
   }
 }
 
+async function fetchJsonWithTimeout(url, timeoutMs = EXTERNAL_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    if (error.name !== 'AbortError') console.error('Error cargando foto:', error);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function searchWikidataPhoto(identifier) {
   const entityId = String(identifier).replace(/^https?:\/\/www\.wikidata\.org\/entity\//, '');
   if (!/^Q\d+$/i.test(entityId)) return null;
@@ -65,7 +82,7 @@ async function searchWikidataPhoto(identifier) {
   const url =
     `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}` +
     '&props=claims&format=json&origin=*';
-  const response = await fetch(url).then((res) => res.json()).catch(() => null);
+  const response = await fetchJsonWithTimeout(url);
   const imageTitle = response?.entities?.[entityId]?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
   if (!imageTitle) return null;
 
@@ -77,7 +94,7 @@ async function fetchCommonsFileInfo(title, { exact }) {
     `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}` +
     `&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=400&format=json&origin=*`;
 
-  const res = await fetch(infoUrl).then((r) => r.json()).catch(() => null);
+  const res = await fetchJsonWithTimeout(infoUrl);
   const pages = res?.query?.pages;
   const page = pages ? Object.values(pages)[0] : null;
   const info = page?.imageinfo?.[0];
@@ -101,7 +118,7 @@ async function getMapillaryPhoto(lat, lon) {
   const CLIENT_TOKEN = import.meta.env.VITE_MAPILLARY_CLIENT_TOKEN;
   if (!CLIENT_TOKEN) return null;
 
-  const delta = 0.0003;
+  const delta = 0.0005;
   const bbox = `${lon - delta},${lat - delta},${lon + delta},${lat + delta}`;
   const url =
     `https://graph.mapillary.com/images?fields=id,thumb_1024_url,geometry&bbox=${bbox}` +
@@ -130,7 +147,7 @@ async function getMapillaryPhoto(lat, lon) {
 
       const [imageLon, imageLat] = coordinates;
       const distance = Math.hypot(imageLat - lat, imageLon - lon);
-      if (distance < 0.00025 && distance < minDistance) {
+      if (distance < 0.0005 && distance < minDistance) {
         minDistance = distance;
         closestImage = image;
       }
@@ -179,7 +196,7 @@ function getSmartPlaceholder(props) {
     categoria = 'cancha_multiple';
   }
 
-  const url = `/assets/placeholders/${categoria}.jpg`;
+  const url = `/assets/placeholders/${categoria}.svg`;
 
   return {
     url,
