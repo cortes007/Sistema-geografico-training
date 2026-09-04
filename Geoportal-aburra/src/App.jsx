@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, X, MapPin, X as CloseIcon, Navigation, ExternalLink } from 'lucide-react';
+import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft } from 'lucide-react';
 import { useMapContext } from './context/MapContext';
 import { MapProvider } from './context/MapContext';
 import MapContainer from './components/map/MapContainer';
@@ -7,15 +7,13 @@ import LayerPanel from './components/sidebar/LayerPanel';
 import CRSPanel from './components/sidebar/CRSPanel';
 import { fetchPlaceImage } from './utils/placeDetails';
 
-function PlaceDetailsCard() {
-  const { selectedPlace, clearSelectedPlace } = useMapContext();
+function PlaceDetailsCard({ onBack }) {
+  const { selectedPlace } = useMapContext();
   const [imageUrl, setImageUrl] = useState('');
   const [loadingImage, setLoadingImage] = useState(false);
 
   useEffect(() => {
     if (!selectedPlace) {
-      setImageUrl('');
-      setLoadingImage(false);
       return;
     }
 
@@ -32,7 +30,6 @@ function PlaceDetailsCard() {
       }
     };
 
-    setImageUrl('');
     loadImage();
 
     return () => {
@@ -45,14 +42,14 @@ function PlaceDetailsCard() {
   const googleMapsUrl = `https://www.google.com/maps?q=${selectedPlace.latitude},${selectedPlace.longitude}&z=18`;
 
   return (
-    <div className="absolute bottom-4 right-4 z-20 w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <button
         type="button"
-        onClick={clearSelectedPlace}
+        onClick={onBack}
         aria-label="Cerrar detalle del lugar"
         className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-1.5 text-slate-600 shadow-sm hover:bg-white"
       >
-        <CloseIcon className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" />
       </button>
 
       {loadingImage ? (
@@ -112,48 +109,56 @@ function PlaceDetailsCard() {
   );
 }
 
-export default function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+function GeoportalContent() {
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const { selectedPlace, clearSelectedPlace } = useMapContext();
 
   return (
-    <MapProvider>
-      <div className="relative flex h-dvh w-full overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setIsSidebarOpen((open) => !open)}
-          aria-label={isSidebarOpen ? 'Cerrar panel lateral' : 'Abrir panel lateral'}
-          aria-expanded={isSidebarOpen}
-          aria-controls="geoportal-sidebar"
-          className="fixed left-3 top-3 z-40 rounded-md bg-white p-2 text-gray-700 shadow-md hover:bg-gray-100 md:hidden"
-        >
-          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-
-        {isSidebarOpen && (
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-label="Cerrar panel lateral"
-            className="fixed inset-0 z-20 bg-black/30 md:hidden"
-          />
-        )}
-
+    <>
+      <div className="relative h-dvh w-full overflow-hidden">
+        <main className="relative h-full min-h-0 min-w-0">
+          <MapContainer />
+        </main>
         <aside
           id="geoportal-sidebar"
-          className={`fixed inset-y-0 left-0 z-30 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-4 overflow-y-auto border-r border-gray-200 bg-white p-4 transition-transform duration-200 ease-out md:static md:z-auto md:w-80 md:flex-shrink-0 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`absolute left-4 top-4 z-20 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 text-[13px] shadow-xl transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
         >
-          <div>
-            <h1 className="text-base font-semibold text-gray-800">Geoportal Deportivo Valle de Aburrá</h1>
-            <p className="text-xs text-gray-500">Parques de calistenia, gimnasios y centros deportivos</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h1 className="text-base font-semibold text-gray-800">Geoportal Deportivo Valle de Aburrá</h1>
+              <p className="text-xs text-gray-500">Parques de calistenia, gimnasios y centros deportivos</p>
+            </div>
+            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="rounded p-1 text-gray-600 hover:bg-gray-100">
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
           </div>
-          <CRSPanel />
-          <LayerPanel />
+          <div className="mt-3 shrink-0">
+            <CRSPanel />
+          </div>
+          {selectedPlace ? (
+            <div className="mt-3 shrink-0">
+              <PlaceDetailsCard onBack={clearSelectedPlace} />
+            </div>
+          ) : (
+            <div className="mt-3 shrink-0">
+              <LayerPanel />
+            </div>
+          )}
         </aside>
-        <main className="relative h-full min-h-0 min-w-0 flex-1">
-          <MapContainer />
-          <PlaceDetailsCard />
-        </main>
+        {!isPanelOpen && (
+          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-20 rounded-xl border border-gray-200 bg-white p-3 text-gray-700 shadow-xl hover:bg-gray-100">
+            <PanelLeftOpen className="h-5 w-5" />
+          </button>
+        )}
       </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <MapProvider>
+      <GeoportalContent />
     </MapProvider>
   );
 }

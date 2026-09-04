@@ -54,9 +54,16 @@ export default function LayerPanel() {
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
           Filtrar equipamiento
         </h2>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
           {Object.values(EQUIPMENT_TYPES).map((type) => (
-            <label key={type} className="flex items-center gap-2 text-sm text-gray-700">
+            <label
+              key={type}
+              className={`flex cursor-pointer items-center gap-2 rounded-full border px-2.5 py-1 text-xs transition ${
+                activeEquipmentTypes[type]
+                  ? 'border-blue-200 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 bg-gray-50 text-gray-500'
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={activeEquipmentTypes[type]}
