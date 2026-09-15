@@ -13,7 +13,7 @@ export function useLayerManager() {
     activeEquipmentTypes,
     toggleEquipmentType,
   } = useMapContext();
-  const { loadFile, loadGeoJSONUrl, reprojectLayerOnMap } = useLayerLoader();
+  const { loadFile, loadTrainingSpots, reprojectLayerOnMap } = useLayerLoader();
   const inputRef = useRef(null);
   const loadedMapRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -27,17 +27,14 @@ export function useLayerManager() {
     setError(null);
     setLoading(true);
 
-    loadGeoJSONUrl(
-      `${import.meta.env.BASE_URL}data/parques_aburra.geojson`,
-      'parques_aburra.geojson'
-    )
+    loadTrainingSpots()
       .catch((err) => {
         setError(err.message || 'No se pudo cargar la capa inicial.');
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [map, loadGeoJSONUrl]);
+  }, [map, loadTrainingSpots]);
 
   const handleFileChange = useCallback(
     async (event) => {

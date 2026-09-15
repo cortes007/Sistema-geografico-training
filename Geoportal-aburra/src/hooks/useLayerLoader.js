@@ -9,6 +9,11 @@ import { useMapContext } from '../context/MapContext';
 import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../constants/equipmentTypes';
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
+import {
+  fetchTrainingSpots,
+  spotsToOlFeatures,
+  spotsToGeoJSON,
+} from '../utils/trainingSpots';
 
 const neutralFeatureStyle = new Style({
   stroke: new Stroke({ color: '#6b7280', width: 2 }),
@@ -109,6 +114,43 @@ export function useLayerLoader() {
     [addVectorLayer]
   );
 
+  /** Carga puntos desde Supabase (tabla training_spots). Geometrías en EPSG:4326. */
+  const loadTrainingSpots = useCallback(async () => {
+    if (!map) {
+      throw new Error('El mapa aún no está listo.');
+    }
+
+    const spots = await fetchTrainingSpots();
+    const features = spotsToOlFeatures(spots);
+
+    features.forEach((feature) => {
+      const type = getEquipmentTypeFromProperties(feature.getProperties());
+      feature.set('equipmentType', type);
+    });
+
+    const source = new VectorSource({ features });
+    const olLayer = new VectorLayer({
+      source,
+      style: (feature) => getFeatureStyle(feature, activeEquipmentTypes),
+    });
+    map.addLayer(olLayer);
+
+    const extent = source.getExtent();
+    if (extent && extent.every(Number.isFinite)) {
+      map.getView().fit(extent, { padding: [40, 40, 40, 40], maxZoom: 17, duration: 400 });
+    }
+
+    addLayer({
+      id: crypto.randomUUID(),
+      name: 'training_spots',
+      olLayer,
+      sourceCode: 'EPSG:4326',
+      sourceCRS: 'WGS 84 (EPSG:4326)',
+      rawGeojson: spotsToGeoJSON(spots),
+      visible: true,
+    });
+  }, [map, addLayer, activeEquipmentTypes]);
+
   const reprojectLayerOnMap = useCallback(
     (layer, targetCode) => {
       const projectedGeojson = reprojectGeoJSON(layer.rawGeojson, layer.sourceCode, targetCode);
@@ -177,5 +219,5 @@ export function useLayerLoader() {
     [loadGeoJSONFile, loadShapefileZip]
   );
 
-  return { loadFile, loadGeoJSONUrl, reprojectLayerOnMap };
+  return { loadFile, loadGeoJSONUrl, loadTrainingSpots, reprojectLayerOnMap };
 }

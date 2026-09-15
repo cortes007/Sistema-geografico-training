@@ -28,7 +28,11 @@ export function getEquipmentTypeFromProperties(properties = {}) {
     .map((value) => value.toString().trim().toLowerCase());
   const text = values.join(' ');
 
-  if (text.includes('calistenia') || text.includes('calisthenics')) {
+  if (
+    text.includes('calistenia') ||
+    text.includes('calisthenics') ||
+    values.includes('aire_libre')
+  ) {
     return EQUIPMENT_TYPES.outdoorGym;
   }
 
