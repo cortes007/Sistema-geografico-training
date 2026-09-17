@@ -15,25 +15,27 @@ export function useLayerManager() {
   } = useMapContext();
   const { loadFile, loadTrainingSpots, reprojectLayerOnMap } = useLayerLoader();
   const inputRef = useRef(null);
-  const loadedMapRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [targetCrsByLayer, setTargetCrsByLayer] = useState({});
 
   useEffect(() => {
-    if (!map || loadedMapRef.current === map) return;
+    if (!map || map.get('initialGeoJSONLoadStarted')) return;
 
-    loadedMapRef.current = map;
-    setError(null);
-    setLoading(true);
+    map.set('initialGeoJSONLoadStarted', true);
+    Promise.resolve().then(() => {
+      setError(null);
+      setLoading(true);
 
-    loadTrainingSpots()
-      .catch((err) => {
-        setError(err.message || 'No se pudo cargar la capa inicial.');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      return loadTrainingSpots()
+        .catch((err) => {
+          map.set('initialGeoJSONLoadStarted', false);
+          setError(err.message || 'No se pudo cargar la capa inicial.');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    });
   }, [map, loadTrainingSpots]);
 
   const handleFileChange = useCallback(

@@ -22,6 +22,7 @@ export function useOpenMap(targetRef) {
 
     const olMap = new Map({
       target: targetRef.current,
+      controls: [],
       layers: [
         new TileLayer({
           source: new OSM(), // atribución OSM incluida por defecto

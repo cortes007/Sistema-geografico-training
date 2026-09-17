@@ -1,39 +1,37 @@
-import { useEffect, useState } from 'react';
-import { Menu, X, MapPin, X as CloseIcon, Navigation, ExternalLink } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft } from 'lucide-react';
 import { useMapContext } from './context/MapContext';
 import { MapProvider } from './context/MapContext';
 import MapContainer from './components/map/MapContainer';
 import LayerPanel from './components/sidebar/LayerPanel';
 import CRSPanel from './components/sidebar/CRSPanel';
-import { fetchPlaceImage } from './utils/placeDetails';
+import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 
-function PlaceDetailsCard() {
-  const { selectedPlace, clearSelectedPlace } = useMapContext();
-  const [imageUrl, setImageUrl] = useState('');
-  const [loadingImage, setLoadingImage] = useState(false);
+function PlaceDetailsCard({ onBack }) {
+  const { selectedPlace } = useMapContext();
+  const [{ loading, photo }, setPhotoState] = useState({
+    loading: Boolean(selectedPlace),
+    photo: null,
+  });
 
   useEffect(() => {
-    if (!selectedPlace) {
-      setImageUrl('');
-      setLoadingImage(false);
-      return;
-    }
-
     let cancelled = false;
 
-    const loadImage = async () => {
-      setLoadingImage(true);
+    const loadPhoto = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+
+      setPhotoState({ loading: true, photo: null });
 
       try {
-        const result = await fetchPlaceImage(selectedPlace);
-        if (!cancelled) setImageUrl(result);
-      } finally {
-        if (!cancelled) setLoadingImage(false);
+        const result = await getPlacePhoto(selectedPlace.feature);
+        if (!cancelled) setPhotoState({ loading: false, photo: result });
+      } catch {
+        if (!cancelled) setPhotoState({ loading: false, photo: null });
       }
     };
 
-    setImageUrl('');
-    loadImage();
+    if (selectedPlace) loadPhoto();
 
     return () => {
       cancelled = true;
@@ -45,63 +43,74 @@ function PlaceDetailsCard() {
   const googleMapsUrl = `https://www.google.com/maps?q=${selectedPlace.latitude},${selectedPlace.longitude}&z=18`;
 
   return (
-    <div className="absolute bottom-4 right-4 z-20 w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+    <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
       <button
         type="button"
-        onClick={clearSelectedPlace}
+        onClick={onBack}
         aria-label="Cerrar detalle del lugar"
         className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-1.5 text-slate-600 shadow-sm hover:bg-white"
       >
-        <CloseIcon className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" />
       </button>
 
-      {loadingImage ? (
-        <div className="flex h-52 items-center justify-center bg-slate-100 text-sm text-slate-500">
-          Cargando imagen…
+      {loading ? (
+        <div className="h-52 animate-pulse bg-slate-100" aria-label="Cargando foto" />
+      ) : photo ? (
+        <div>
+          {!photo.exact && (
+            <p className="px-3 pt-2 text-xs text-slate-500">Foto cercana a esta ubicación</p>
+          )}
+          <img
+            src={photo.thumbUrl || photo.url}
+            alt={selectedPlace.name}
+            onError={() => setPhotoState({ loading: false, photo: null })}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="h-52 w-full object-cover"
+          />
+          <p className="px-3 py-1 text-[11px] text-slate-500">
+            Foto: {photo.credit || 'Fuente no especificada'}
+            {photo.license && ` · ${photo.license}`}
+          </p>
         </div>
       ) : (
-        <img
-          src={imageUrl || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600">
-              <rect width="1000" height="600" fill="#e2e8f0"/>
-              <circle cx="500" cy="240" r="140" fill="#2563eb" opacity="0.18"/>
-              <path d="M250 390 C 330 330, 420 330, 500 410 S 670 470, 750 390 L 750 470 L 250 470 Z" fill="#1d4ed8" opacity="0.82"/>
-              <text x="500" y="200" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#0f172a">${selectedPlace.name}</text>
-              <text x="500" y="420" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#334155">Sin imagen disponible</text>
-            </svg>
-          `)}
-          alt={selectedPlace.name}
-          className="h-52 w-full object-cover"
-        />
+        <div className="flex h-52 flex-col items-center justify-center gap-2 bg-slate-100 text-slate-500">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+            <MapPin className="h-6 w-6" />
+          </div>
+          <span className="text-sm">Sin fotos disponibles</span>
+        </div>
       )}
 
-      <div className="space-y-4 p-4">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
-          <MapPin className="h-3.5 w-3.5" />
-          {selectedPlace.type}
+      <div className="space-y-3 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+            <MapPin className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-bold text-slate-800">{selectedPlace.name}</h2>
+            <p className="text-xs text-slate-500">{selectedPlace.type} · Lugar deportivo</p>
+          </div>
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold text-slate-800">{selectedPlace.name}</h2>
-          <p className="mt-1 text-sm text-slate-500">Ubicación seleccionada en el mapa</p>
-        </div>
+        {selectedPlace.openingHours && (
+          <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+            <p className="mb-1 font-semibold text-slate-700">Horario</p>
+            <p>{selectedPlace.openingHours}</p>
+          </div>
+        )}
 
-        <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-slate-700">Latitud</span>
-            <span>{selectedPlace.latitude}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-slate-700">Longitud</span>
-            <span>{selectedPlace.longitude}</span>
-          </div>
+        <div className="flex items-center justify-between text-[11px] text-slate-500">
+          <span>Fuente: <strong className="text-slate-700">OpenStreetMap</strong></span>
+          <span>{selectedPlace.latitude}, {selectedPlace.longitude}</span>
         </div>
 
         <a
           href={googleMapsUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
         >
           <Navigation className="h-4 w-4" />
           Abrir en Google Maps
@@ -112,48 +121,66 @@ function PlaceDetailsCard() {
   );
 }
 
-export default function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+function GeoportalContent() {
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const { selectedPlace, clearSelectedPlace } = useMapContext();
+  const selectedDetailsRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedPlace) return;
+
+    selectedDetailsRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [selectedPlace]);
 
   return (
-    <MapProvider>
-      <div className="relative flex h-dvh w-full overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setIsSidebarOpen((open) => !open)}
-          aria-label={isSidebarOpen ? 'Cerrar panel lateral' : 'Abrir panel lateral'}
-          aria-expanded={isSidebarOpen}
-          aria-controls="geoportal-sidebar"
-          className="fixed left-3 top-3 z-40 rounded-md bg-white p-2 text-gray-700 shadow-md hover:bg-gray-100 md:hidden"
-        >
-          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-
-        {isSidebarOpen && (
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-label="Cerrar panel lateral"
-            className="fixed inset-0 z-20 bg-black/30 md:hidden"
-          />
-        )}
-
+    <>
+      <div className="relative h-dvh w-full overflow-hidden">
+        <main className="relative h-full min-h-0 min-w-0">
+          <MapContainer />
+        </main>
         <aside
           id="geoportal-sidebar"
-          className={`fixed inset-y-0 left-0 z-30 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-4 overflow-y-auto border-r border-gray-200 bg-white p-4 transition-transform duration-200 ease-out md:static md:z-auto md:w-80 md:flex-shrink-0 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`absolute left-4 top-4 z-20 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-2xl bg-white p-3 text-[13px] shadow-lg transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
         >
-          <div>
-            <h1 className="text-base font-semibold text-gray-800">Geoportal Deportivo Valle de Aburrá</h1>
-            <p className="text-xs text-gray-500">Parques de calistenia, gimnasios y centros deportivos</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h1 className="text-base font-semibold text-gray-800">Geoportal Deportivo Valle de Aburrá</h1>
+              <p className="text-xs text-gray-500">Parques de calistenia, gimnasios y centros deportivos</p>
+            </div>
+            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="rounded p-1 text-gray-600 hover:bg-gray-100">
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
           </div>
-          <CRSPanel />
-          <LayerPanel />
+          <div className="mt-3 shrink-0">
+            <CRSPanel />
+          </div>
+          {selectedPlace ? (
+            <div ref={selectedDetailsRef} className="mt-3 shrink-0 scroll-mt-3">
+              <PlaceDetailsCard onBack={clearSelectedPlace} />
+            </div>
+          ) : (
+            <div className="mt-3 shrink-0">
+              <LayerPanel />
+            </div>
+          )}
         </aside>
-        <main className="relative h-full min-h-0 min-w-0 flex-1">
-          <MapContainer />
-          <PlaceDetailsCard />
-        </main>
+        {!isPanelOpen && (
+          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-20 rounded-xl bg-white p-3 text-gray-700 shadow-lg hover:bg-gray-100">
+            <PanelLeftOpen className="h-5 w-5" />
+          </button>
+        )}
       </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <MapProvider>
+      <GeoportalContent />
     </MapProvider>
   );
 }

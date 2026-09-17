@@ -3,7 +3,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Circle as CircleStyle, Fill, Icon, Stroke, Style } from 'ol/style';
 import { toLonLat } from 'ol/proj';
 import { useMapContext } from '../context/MapContext';
 import { extractPlaceData } from '../utils/placeDetails';
@@ -17,10 +17,10 @@ const markerStyle = new Style({
 });
 
 const selectionStyle = new Style({
-  image: new CircleStyle({
-    radius: 8,
-    fill: new Fill({ color: '#f97316' }),
-    stroke: new Stroke({ color: '#ffffff', width: 2.5 }),
+  image: new Icon({
+    src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56"><path d="M22 2C10.4 2 2 10.7 2 21.6 2 36.8 22 54 22 54s20-17.2 20-32.4C42 10.7 33.6 2 22 2Z" fill="#f97316" stroke="#fff" stroke-width="3"/><circle cx="22" cy="21" r="11" fill="#fff"/><circle cx="22" cy="21" r="5" fill="#f97316"/></svg>')}`,
+    anchor: [0.5, 1],
+    scale: 0.8,
   }),
 });
 
@@ -67,9 +67,12 @@ export function useClickMarker() {
       }
 
       const [lon, lat] = toLonLat(geometry.getCoordinates());
+      foundFeature.__lonLat = [lon, lat];
       const basePlace = extractPlaceData(foundFeature);
       const place = {
         ...basePlace,
+        feature: foundFeature,
+        openingHours: foundFeature.get('opening_hours') || foundFeature.get('openingHours') || '',
         type: basePlace.type || 'Lugar deportivo',
         coordinates: [Number(lon.toFixed(6)), Number(lat.toFixed(6))],
         longitude: Number(lon.toFixed(6)),
