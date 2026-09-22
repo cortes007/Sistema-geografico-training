@@ -107,7 +107,7 @@ export function useLayerLoader() {
     [addVectorLayer]
   );
 
-  /** Carga puntos desde Supabase (tabla training_spots). Geometrías en EPSG:4326. */
+  /** Carga lugares deportivos desde training_spots. Las geometrías llegan en EPSG:4326. */
   const loadTrainingSpots = useCallback(async () => {
     if (!map) {
       throw new Error('El mapa aún no está listo.');

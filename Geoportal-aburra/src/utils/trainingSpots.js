@@ -64,20 +64,35 @@ function toDisplayPointGeometry(geometry) {
 }
 
 /**
- * Consulta todos los puntos de entrenamiento desde Supabase.
- * geom llega como GeoJSON (EPSG:4326) vía PostgREST.
- * select('*') tolera esquemas OSM variables (leisure, sport, amenity, etc.).
+ * Consulta los centros deportivos de training_spots usando sus etiquetas leisure.
+ * Se pagina para evitar el límite de filas de PostgREST.
  */
 export async function fetchTrainingSpots() {
-  const { data, error } = await supabase
-    .from('training_spots')
-    .select('*');
+  const leisureValues = ['fitness_centre', 'fitness_station', 'sports_centre'];
+  const pageSize = 1000;
+  const spots = [];
+  let offset = 0;
 
-  if (error) {
-    throw new Error(error.message || 'No se pudieron cargar los training spots.');
+  while (true) {
+    const { data, error } = await supabase
+      .from('training_spots')
+      .select('*')
+      .in('leisure', leisureValues)
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudieron cargar los centros deportivos.');
+    }
+
+    spots.push(...(data ?? []));
+
+    if (!data || data.length < pageSize) {
+      return spots;
+    }
+
+    offset += pageSize;
   }
-
-  return data ?? [];
 }
 
 /**

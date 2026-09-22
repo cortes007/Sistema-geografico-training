@@ -1,0 +1,13 @@
+{
+  "name": "geoportal-aburra-backend",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "migrate": "node src/infrastructure/db/runMigrations.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  }
+}

@@ -148,7 +148,7 @@ function GeoportalContent() {
           <div className="flex items-start justify-between gap-2">
             <div>
               <h1 className="text-base font-semibold text-gray-800">Geoportal Deportivo Valle de Aburrá</h1>
-              <p className="text-xs text-gray-500">Parques de calistenia, gimnasios y centros deportivos</p>
+              <p className="text-xs text-gray-500">Lugares de entrenamiento, gimnasios y centros deportivos</p>
             </div>
             <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="rounded p-1 text-gray-600 hover:bg-gray-100">
               <PanelLeftClose className="h-4 w-4" />
