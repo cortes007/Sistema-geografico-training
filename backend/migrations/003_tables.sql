@@ -1,15 +1,12 @@
 CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nombre_usuario TEXT NOT NULL,
-  email TEXT NOT NULL,
-  hash_password TEXT NOT NULL,
   nombre_completo TEXT NOT NULL,
   nivel_experiencia nivel_experiencia NOT NULL,
   foto_perfil_url TEXT,
   fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now(),
   activo BOOLEAN NOT NULL DEFAULT true,
   CONSTRAINT usuarios_nombre_usuario_key UNIQUE (nombre_usuario),
-  CONSTRAINT usuarios_email_key UNIQUE (email)
 );
 
 CREATE TABLE eventos_quedadas (

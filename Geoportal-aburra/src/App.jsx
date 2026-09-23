@@ -5,6 +5,7 @@ import { MapProvider } from './context/MapContext';
 import MapContainer from './components/map/MapContainer';
 import LayerPanel from './components/sidebar/LayerPanel';
 import CRSPanel from './components/sidebar/CRSPanel';
+import AuthPanel from './components/auth/AuthPanel';
 import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 
 function PlaceDetailsCard({ onBack }) {
@@ -141,6 +142,7 @@ function GeoportalContent() {
         <main className="relative h-full min-h-0 min-w-0">
           <MapContainer />
         </main>
+        <AuthPanel />
         <aside
           id="geoportal-sidebar"
           className={`absolute left-4 top-4 z-20 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-2xl bg-white p-3 text-[13px] shadow-lg transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
