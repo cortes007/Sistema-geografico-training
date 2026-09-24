@@ -7,6 +7,7 @@ import LayerPanel from './components/sidebar/LayerPanel';
 import CRSPanel from './components/sidebar/CRSPanel';
 import AuthPanel from './components/auth/AuthPanel';
 import { getPlacePhoto } from './utils/gis/getPlacePhoto';
+import MeetupsPanel from './components/meetups/MeetupsPanel';
 
 function PlaceDetailsCard({ onBack }) {
   const { selectedPlace } = useMapContext();
@@ -117,6 +118,7 @@ function PlaceDetailsCard({ onBack }) {
           Abrir en Google Maps
           <ExternalLink className="h-4 w-4" />
         </a>
+        <MeetupsPanel spotId={String(selectedPlace.feature.getId())} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Compass, Layers } from 'lucide-react';
+import { Compass, Layers, Minus, Plus } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
 
 export default function MapControls() {
@@ -38,6 +38,13 @@ export default function MapControls() {
     map.getView().animate({ rotation: 0, duration: 250 });
   };
 
+  const changeZoom = (delta) => {
+    const view = map.getView();
+    const currentZoom = view.getZoom();
+    if (currentZoom === undefined) return;
+    view.animate({ zoom: currentZoom + delta, duration: 200 });
+  };
+
   const getPointerAngle = (event) => {
     const rect = compassRef.current?.getBoundingClientRect();
     if (!rect) return 0;
@@ -69,12 +76,30 @@ export default function MapControls() {
   };
 
   return (
-    <div className="absolute right-4 top-4 z-20 flex flex-col overflow-hidden rounded-2xl bg-white/95 shadow-lg backdrop-blur">
+    <div className="absolute right-4 top-24 z-20 flex flex-col overflow-hidden rounded-2xl bg-white/95 shadow-lg backdrop-blur">
+      <button
+        type="button"
+        onClick={() => changeZoom(1)}
+        title="Acercar mapa"
+        aria-label="Acercar mapa"
+        className="flex h-11 w-11 items-center justify-center text-gray-700 hover:bg-gray-100"
+      >
+        <Plus className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => changeZoom(-1)}
+        title="Alejar mapa"
+        aria-label="Alejar mapa"
+        className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
+      >
+        <Minus className="h-5 w-5" />
+      </button>
       <button
         type="button"
         onClick={toggleBaseLayer}
         title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-        className="flex h-11 w-11 items-center justify-center text-gray-700 hover:bg-gray-100"
+        className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
       >
         <Layers className="h-5 w-5" />
       </button>

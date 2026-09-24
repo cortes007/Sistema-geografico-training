@@ -25,16 +25,7 @@ export type QuedadaRow = EventoRow & {
   asistentes_confirmados: number;
 };
 
-export type EventoInput = {
-  trainingSpotId: string;
-  organizadorId: UUID;
-  titulo: string;
-  descripcion?: string | null;
-  fechaHoraInicio: string;
-  fechaHoraFin?: string | null;
-};
-
-export type Quedada = {
+export interface EventoQuedada {
   id: UUID;
   trainingSpotId: string;
   organizadorId: UUID;
@@ -49,8 +40,28 @@ export type Quedada = {
   ciudad: string | null;
   geom: unknown;
   asistentesConfirmados: number;
+}
+
+export interface AsistenciaEvento {
+  eventoId: UUID;
+  usuarioId: UUID;
+  fechaRegistro: string;
+}
+
+export type CrearEventoDTO = {
+  trainingSpotId: string;
+  titulo: string;
+  descripcion?: string | null;
+  fechaHoraInicio: string;
+  fechaHoraFin?: string | null;
 };
 
+export type ActualizarEventoDTO = Partial<Omit<CrearEventoDTO, 'trainingSpotId'>> & {
+  trainingSpotId?: string;
+};
+
+export type EventoInput = CrearEventoDTO;
+export type Quedada = EventoQuedada;
 export type EventoInsert = Omit<EventoRow, 'id' | 'fecha_creacion'>;
 export type AsistenciaInsert = Omit<AsistenciaRow, 'fecha_registro'>;
 
@@ -66,12 +77,16 @@ export type Database = {
         Args: Record<string, never>;
         Returns: QuedadaRow[];
       };
+      listar_eventos_proximos: {
+        Args: { training_spot_id_param?: string | null };
+        Returns: QuedadaRow[];
+      };
       confirmar_asistencia: {
-        Args: { evento_id_param: UUID; usuario_id_param: UUID };
+        Args: { evento_id_param: UUID };
         Returns: undefined;
       };
       cancelar_asistencia: {
-        Args: { evento_id_param: UUID; usuario_id_param: UUID };
+        Args: { evento_id_param: UUID };
         Returns: undefined;
       };
     };
