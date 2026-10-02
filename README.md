@@ -106,6 +106,12 @@ Los datos de parques del Valle de Aburrá se obtienen de [OpenStreetMap](https:/
 
 Los datos de OpenStreetMap se distribuyen bajo la licencia [ODbL](https://opendatacommons.org/licenses/odbl/). Las visualizaciones deben conservar la atribución correspondiente a OpenStreetMap.
 
+## Calificaciones de lugares
+
+Las personas registradas pueden dejar una calificación de una a cinco estrellas y un comentario opcional en el detalle de un punto seleccionado. Cada usuario puede mantener una opinión por lugar y actualizarla posteriormente; las opiniones publicadas son visibles para todas las personas.
+
+Para habilitar la funcionalidad en Supabase, ejecuta [`sql/calificaciones_lugares.sql`](./sql/calificaciones_lugares.sql) en el SQL Editor del proyecto. El script crea la tabla `public.calificaciones_lugares`, configura sus políticas de seguridad RLS y permite consultar opiniones públicamente, restringiendo la creación y actualización a la persona autenticada propietaria de cada opinión.
+
 ## Estructura del proyecto
 
 ```text

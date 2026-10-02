@@ -113,15 +113,17 @@ function AuthForm({ mode, onClose, onChangeMode }) {
   );
 }
 
-export default function AuthPanel() {
+export default function AuthPanel({ mode, setMode, isSidebarOpen }) {
   const { user, loading, signOut } = useAuth();
-  const [mode, setMode] = useState(null);
+  const position = isSidebarOpen
+    ? 'bottom-4 right-4 top-auto md:bottom-auto md:top-4'
+    : 'right-4 top-4';
 
   if (loading) return null;
 
   if (user) {
     return (
-      <div className="absolute right-4 top-4 z-30 flex items-center gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm">
+      <div className={`absolute ${position} z-30 flex items-center gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm`}>
         <span className="max-w-40 truncate px-2 text-xs font-semibold text-slate-700" title={user.email}>{user.email}</span>
         <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
           <LogOut className="h-4 w-4" />
@@ -132,7 +134,7 @@ export default function AuthPanel() {
 
   return (
     <>
-      <div className="absolute right-4 top-4 z-30 flex gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm">
+      <div className={`absolute ${position} z-30 flex gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm`}>
         <button type="button" onClick={() => setMode('login')} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">
           <LogIn className="h-4 w-4" />
           Iniciar sesión

@@ -16,6 +16,21 @@ export type AsistenciaRow = {
   fecha_registro: string;
 };
 
+export type CalificacionLugarRow = {
+  id: UUID;
+  lugar_key: string;
+  lugar_nombre: string;
+  lugar_tipo: string;
+  latitud: number;
+  longitud: number;
+  usuario_id: UUID;
+  nombre_usuario: string;
+  calificacion: number;
+  comentario: string | null;
+  fecha_creacion: string;
+  fecha_actualizacion: string;
+};
+
 export type QuedadaRow = EventoRow & {
   lugar_nombre: string;
   lugar_descripcion: string | null;
@@ -64,12 +79,22 @@ export type EventoInput = CrearEventoDTO;
 export type Quedada = EventoQuedada;
 export type EventoInsert = Omit<EventoRow, 'id' | 'fecha_creacion'>;
 export type AsistenciaInsert = Omit<AsistenciaRow, 'fecha_registro'>;
+export type CalificacionLugarInsert = Omit<
+  CalificacionLugarRow,
+  'id' | 'fecha_creacion' | 'fecha_actualizacion'
+>;
 
 export type Database = {
   public: {
     Tables: {
       eventos_quedadas: { Row: EventoRow; Insert: EventoInsert; Update: Partial<EventoInsert>; Relationships: [] };
       asistencias_evento: { Row: AsistenciaRow; Insert: AsistenciaInsert; Update: Partial<AsistenciaInsert>; Relationships: [] };
+      calificaciones_lugares: {
+        Row: CalificacionLugarRow;
+        Insert: CalificacionLugarInsert;
+        Update: Partial<CalificacionLugarInsert>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
