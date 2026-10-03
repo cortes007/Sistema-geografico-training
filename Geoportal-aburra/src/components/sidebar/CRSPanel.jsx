@@ -6,10 +6,10 @@ export default function CRSPanel() {
   const { activeCRS, setActiveCRS, capturedCoord } = useMapContext();
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-slate-50/80 p-3 shadow-sm">
-      <label className="text-xs font-medium text-gray-600">Sistema de referencia para coordenadas</label>
+    <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/80 p-3 shadow-lg backdrop-blur-sm">
+      <label className="text-xs font-medium text-[var(--color-text-secondary)]">Sistema de referencia para coordenadas</label>
       <select
-        className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
+        className="w-full rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)]"
         value={activeCRS}
         onChange={(e) => setActiveCRS(e.target.value)}
       >
@@ -20,7 +20,7 @@ export default function CRSPanel() {
 
       <CoordinateDisplay coordinate3857={capturedCoord} targetCRS={activeCRS} />
 
-      <p className="text-[11px] text-gray-400">Haz clic en el mapa para capturar una coordenada.</p>
+      <p className="text-[11px] text-[var(--color-text-secondary)]">Haz clic en el mapa para capturar una coordenada.</p>
     </div>
   );
 }

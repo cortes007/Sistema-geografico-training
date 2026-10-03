@@ -76,13 +76,13 @@ export default function MapControls() {
   };
 
   return (
-    <div className="absolute right-4 top-24 z-20 flex flex-col overflow-hidden rounded-2xl bg-white/95 shadow-lg backdrop-blur">
+    <div className="absolute right-4 top-24 z-20 flex flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/90 shadow-lg backdrop-blur-sm">
       <button
         type="button"
         onClick={() => changeZoom(1)}
         title="Acercar mapa"
         aria-label="Acercar mapa"
-        className="flex h-11 w-11 items-center justify-center text-gray-700 hover:bg-gray-100"
+        className="flex h-11 w-11 items-center justify-center text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
       >
         <Plus className="h-5 w-5" />
       </button>
@@ -91,7 +91,7 @@ export default function MapControls() {
         onClick={() => changeZoom(-1)}
         title="Alejar mapa"
         aria-label="Alejar mapa"
-        className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
+        className="flex h-11 w-11 items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
       >
         <Minus className="h-5 w-5" />
       </button>
@@ -99,7 +99,7 @@ export default function MapControls() {
         type="button"
         onClick={toggleBaseLayer}
         title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-        className="flex h-11 w-11 items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
+        className="flex h-11 w-11 items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
       >
         <Layers className="h-5 w-5" />
       </button>
@@ -114,7 +114,7 @@ export default function MapControls() {
         }}
         title="Orientar mapa al norte"
         aria-label="Orientar mapa al norte"
-        className="flex h-11 w-11 touch-none items-center justify-center border-t border-gray-200 text-gray-700 hover:bg-gray-100"
+        className="flex h-11 w-11 touch-none items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
       >
         <Compass className="h-5 w-5 transition-transform" style={{ transform: `rotate(${rotation}rad)` }} />
       </button>

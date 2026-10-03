@@ -14,7 +14,7 @@ function getAuthMessage(error) {
 function Field({ label, name, type = 'text', value, onChange, required = true }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-semibold text-slate-700">{label}</span>
+      <span className="text-xs font-semibold text-[var(--color-text-primary)]">{label}</span>
       <input
         name={name}
         type={type}
@@ -22,7 +22,7 @@ function Field({ label, name, type = 'text', value, onChange, required = true })
         onChange={onChange}
         required={required}
         autoComplete={type === 'password' ? 'current-password' : name}
-        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)] focus:bg-[var(--color-bg-secondary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
       />
     </label>
   );
@@ -70,15 +70,15 @@ function AuthForm({ mode, onClose, onChangeMode }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-md" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-md rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-6 shadow-2xl">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-600">Geoportal deportivo</p>
-            <h2 id="auth-title" className="text-xl font-bold text-slate-900">{isRegister ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
-            <p className="mt-1 text-sm text-slate-500">El mapa está disponible sin registro.</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-accent-primary)]">Geoportal deportivo</p>
+            <h2 id="auth-title" className="text-xl font-bold text-[var(--color-text-primary)]">{isRegister ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">El mapa está disponible sin registro.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar autenticación" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800">
+          <button type="button" onClick={onClose} aria-label="Cerrar autenticación" className="rounded-lg p-2 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -93,18 +93,18 @@ function AuthForm({ mode, onClose, onChangeMode }) {
           <Field label="Correo electrónico" name="email" type="email" value={form.email} onChange={updateField} />
           <Field label="Contraseña" name="password" type="password" value={form.password} onChange={updateField} />
 
-          {status.error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700">{status.error}</p>}
-          {status.success && <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">{status.success}</p>}
+          {status.error && <p role="alert" className="rounded-xl bg-[var(--color-accent-danger)]/20 px-3 py-2.5 text-sm text-[var(--color-accent-danger)]">{status.error}</p>}
+          {status.success && <p role="status" className="rounded-xl bg-[var(--color-accent-success)]/20 px-3 py-2.5 text-sm text-[var(--color-accent-success)]">{status.success}</p>}
 
-          <button type="submit" disabled={status.loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={status.loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-[var(--color-accent-secondary)] hover:shadow-xl disabled:cursor-wait disabled:opacity-60">
             {isRegister ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
             {status.loading ? 'Procesando...' : isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-slate-500">
+        <p className="mt-5 text-center text-sm text-[var(--color-text-secondary)]">
           {isRegister ? '¿Ya tienes una cuenta?' : '¿Aún no tienes una cuenta?'}{' '}
-          <button type="button" onClick={() => onChangeMode(isRegister ? 'login' : 'register')} className="font-semibold text-blue-600 hover:text-blue-700">
+          <button type="button" onClick={() => onChangeMode(isRegister ? 'login' : 'register')} className="font-semibold text-[var(--color-accent-primary)] hover:text-[var(--color-accent-secondary)]">
             {isRegister ? 'Inicia sesión' : 'Regístrate'}
           </button>
         </p>
@@ -123,9 +123,9 @@ export default function AuthPanel({ mode, setMode, isSidebarOpen }) {
 
   if (user) {
     return (
-      <div className={`absolute ${position} z-30 flex items-center gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm`}>
-        <span className="max-w-40 truncate px-2 text-xs font-semibold text-slate-700" title={user.email}>{user.email}</span>
-        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+      <div className={`absolute ${position} z-30 flex items-center gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm`}>
+        <span className="max-w-40 truncate px-2 text-xs font-semibold text-[var(--color-text-primary)]" title={user.email}>{user.email}</span>
+        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">
           <LogOut className="h-4 w-4" />
         </button>
       </div>
@@ -134,12 +134,12 @@ export default function AuthPanel({ mode, setMode, isSidebarOpen }) {
 
   return (
     <>
-      <div className={`absolute ${position} z-30 flex gap-2 rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur-sm`}>
-        <button type="button" onClick={() => setMode('login')} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+      <div className={`absolute ${position} z-30 flex gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm`}>
+        <button type="button" onClick={() => setMode('login')} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-elevated)]">
           <LogIn className="h-4 w-4" />
           Iniciar sesión
         </button>
-        <button type="button" onClick={() => setMode('register')} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+        <button type="button" onClick={() => setMode('register')} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-secondary)]">
           <UserPlus className="h-4 w-4" />
           Registrarse
         </button>

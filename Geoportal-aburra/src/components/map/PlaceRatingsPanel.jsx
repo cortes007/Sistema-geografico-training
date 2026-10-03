@@ -17,10 +17,10 @@ function Stars({ value, interactive = false, onSelect }) {
           onClick={interactive ? () => onSelect(star) : undefined}
           aria-label={interactive ? `Calificar con ${star} ${star === 1 ? 'estrella' : 'estrellas'}` : undefined}
           aria-pressed={interactive ? value === star : undefined}
-          className={interactive ? 'rounded p-0.5 focus:outline-none focus:ring-2 focus:ring-amber-400' : 'cursor-default p-0.5'}
+          className={interactive ? 'rounded p-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-warning)]' : 'cursor-default p-0.5'}
         >
           <Star
-            className={`h-5 w-5 ${star <= value ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`}
+            className={`h-5 w-5 ${star <= value ? 'fill-[var(--color-accent-warning)] text-[var(--color-accent-warning)]' : 'text-[var(--color-bg-elevated)]'}`}
           />
         </button>
       ))}
@@ -30,20 +30,20 @@ function Stars({ value, interactive = false, onSelect }) {
 
 function ReviewCard({ review, isCurrentUser }) {
   return (
-    <article className="rounded-xl border border-slate-200 p-3">
+    <article className="rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-slate-800">
+          <p className="truncate text-xs font-semibold text-[var(--color-text-primary)]">
             {review.nombre_usuario}{isCurrentUser ? ' · Tu opinión' : ''}
           </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-[var(--color-text-secondary)]">
             {new Date(review.fecha_actualizacion).toLocaleDateString('es-CO')}
           </p>
         </div>
         <Stars value={review.calificacion} />
       </div>
       {review.comentario && (
-        <p className="mt-2 whitespace-pre-wrap break-words text-xs text-slate-600">
+        <p className="mt-2 whitespace-pre-wrap break-words text-xs text-[var(--color-text-secondary)]">
           {review.comentario}
         </p>
       )}
@@ -111,62 +111,62 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
     : 0;
 
   return (
-    <section className="mt-4 border-t border-slate-200 pt-3">
+    <section className="mt-4 border-t border-[var(--color-bg-elevated)] pt-3">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold text-slate-800">Calificaciones y opiniones</h3>
+        <h3 className="font-semibold text-[var(--color-text-primary)]">Calificaciones y opiniones</h3>
         {!loading && reviews.length > 0 && (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[var(--color-text-secondary)]">
             {average.toFixed(1)} / 5 · {reviews.length} {reviews.length === 1 ? 'opinión' : 'opiniones'}
           </span>
         )}
       </div>
 
       {user ? (
-        <form onSubmit={saveReview} className="mt-3 space-y-2 rounded-xl border border-amber-100 bg-amber-50 p-3">
-          <label className="block text-xs font-semibold text-slate-700">
+        <form onSubmit={saveReview} className="mt-3 space-y-2 rounded-xl border border-[var(--color-accent-warning)]/30 bg-[var(--color-accent-warning)]/10 p-3">
+          <label className="block text-xs font-semibold text-[var(--color-text-primary)]">
             Tu calificación
             <span className="mt-1 block">
               <Stars value={rating} interactive onSelect={setRating} />
             </span>
           </label>
-          <label className="block text-xs font-semibold text-slate-700">
-            Comentario <span className="font-normal text-slate-500">(opcional)</span>
+          <label className="block text-xs font-semibold text-[var(--color-text-primary)]">
+            Comentario <span className="font-normal text-[var(--color-text-secondary)]">(opcional)</span>
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               maxLength={1000}
               rows={3}
               placeholder="Comparte tu experiencia en este lugar"
-              className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-2.5 py-2 font-normal text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              className="mt-1 w-full resize-y rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-2.5 py-2 font-normal text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-warning)] focus:ring-2 focus:ring-[var(--color-accent-warning)]/20"
             />
-            <span className="mt-1 block text-right font-normal text-slate-500">{comment.length}/1000</span>
+            <span className="mt-1 block text-right font-normal text-[var(--color-text-secondary)]">{comment.length}/1000</span>
           </label>
           <button
             type="submit"
             disabled={saving || loading || rating === 0}
-            className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-[var(--color-accent-warning)] px-3 py-2 text-xs font-semibold text-[var(--color-bg-primary)] transition-all duration-200 hover:bg-[var(--color-accent-secondary)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? 'Guardando...' : reviews.some((review) => review.usuario_id === user.id) ? 'Actualizar opinión' : 'Publicar opinión'}
           </button>
         </form>
       ) : (
-        <div className="mt-3 rounded-xl bg-slate-50 p-3">
-          <p className="text-xs text-slate-600">Inicia sesión para calificar este lugar y compartir tu opinión.</p>
+        <div className="mt-3 rounded-xl bg-[var(--color-bg-secondary)] p-3">
+          <p className="text-xs text-[var(--color-text-secondary)]">Inicia sesión para calificar este lugar y compartir tu opinión.</p>
           <button
             type="button"
             onClick={onRequestAuth}
-            className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            className="mt-2 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-secondary)]"
           >
             Iniciar sesión
           </button>
         </div>
       )}
 
-      {success && <p role="status" className="mt-2 text-xs text-emerald-700">{success}</p>}
-      {error && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">{error}</p>}
-      {loading && <p className="mt-3 text-xs text-slate-500">Cargando opiniones...</p>}
+      {success && <p role="status" className="mt-2 text-xs text-[var(--color-accent-success)]">{success}</p>}
+      {error && <p role="alert" className="mt-2 rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
+      {loading && <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando opiniones...</p>}
       {!loading && !error && reviews.length === 0 && (
-        <p className="mt-3 text-xs text-slate-500">Este lugar aún no tiene opiniones.</p>
+        <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Este lugar aún no tiene opiniones.</p>
       )}
       {!loading && reviews.length > 0 && (
         <div className="mt-3 space-y-2">

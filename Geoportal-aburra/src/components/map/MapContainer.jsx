@@ -53,7 +53,7 @@ export default function MapContainer() {
       <div ref={targetRef} className="h-full w-full" />
       {map && <MapControls />}
       {toast && (
-        <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-lg bg-white px-4 py-2 text-sm text-gray-700 shadow-lg">
+        <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">
           {toast}
         </div>
       )}

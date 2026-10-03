@@ -1,11 +1,57 @@
 @import "tailwindcss";
 
+:root {
+  /* Paleta principal - Naturaleza Deportiva */
+  --color-bg-primary: #1a2e1a;
+  --color-bg-secondary: #2d4a2d;
+  --color-bg-elevated: #3d5c3d;
+  --color-text-primary: #f0fdf4;
+  --color-text-secondary: #86efac;
+  --color-accent-primary: #22c55e;
+  --color-accent-secondary: #84cc16;
+  --color-accent-success: #10b981;
+  --color-accent-warning: #fbbf24;
+  --color-accent-danger: #ef4444;
+
+  /* Sombras y efectos */
+  --shadow-panel: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --backdrop-blur: blur(12px);
+
+  /* Bordes redondeados */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
 html, body, #root {
   height: 100%;
   min-height: 100vh;
   margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 body {
   overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a6b4a;
 }
