@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "migrate": "node src/infrastructure/db/runMigrations.js"
+    "migrate": "node src/infrastructure/db/runMigrations.js",
+    "start:routes": "node src/infrastructure/http/routeServer.js",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

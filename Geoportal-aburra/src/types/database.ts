@@ -19,6 +19,7 @@ export type AsistenciaRow = {
 export type CalificacionLugarRow = {
   id: UUID;
   lugar_key: string;
+  training_spot_id: string | null;
   lugar_nombre: string;
   lugar_tipo: string;
   latitud: number;
@@ -105,6 +106,15 @@ export type Database = {
       listar_eventos_proximos: {
         Args: { training_spot_id_param?: string | null };
         Returns: QuedadaRow[];
+      };
+      listar_calificaciones_agregadas_lugares: {
+        Args: Record<string, never>;
+        Returns: {
+          training_spot_id: string;
+          average_rating: number;
+          rating_count: number;
+          ranking_rating: number;
+        }[];
       };
       confirmar_asistencia: {
         Args: { evento_id_param: UUID };

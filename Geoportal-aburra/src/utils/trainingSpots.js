@@ -113,6 +113,7 @@ export function spotsToOlFeatures(spots) {
       const displayPoint = toDisplayPointGeometry(feature.getGeometry());
       if (displayPoint) feature.setGeometry(displayPoint);
       feature.setId(spot.id);
+      feature.set('trainingSpotId', String(spot.id));
       return feature;
     })
     .filter((feature) => feature.getGeometry());

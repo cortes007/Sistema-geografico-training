@@ -1,16 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft, Route, LoaderCircle } from 'lucide-react';
 import { useMapContext } from './context/MapContext';
 import { MapProvider } from './context/MapContext';
 import MapContainer from './components/map/MapContainer';
-import LayerPanel from './components/sidebar/LayerPanel';
-import CRSPanel from './components/sidebar/CRSPanel';
+import PlacesFilterPanel from './components/sidebar/PlacesFilterPanel';
 import AuthPanel from './components/auth/AuthPanel';
 import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 import MeetupsPanel from './components/meetups/MeetupsPanel';
 import PlaceRatingsPanel from './components/map/PlaceRatingsPanel';
+import { useUserLocation } from './hooks/useUserLocation';
+import { useDirections } from './hooks/useDirections';
 
-function PlaceDetailsCard({ onBack, onRequestAuth }) {
+function PlaceDetailsCard({
+  onBack,
+  onRequestAuth,
+  onGetDirections,
+  directionsLoading,
+  directionsError,
+  route,
+}) {
   const { selectedPlace } = useMapContext();
   const [{ loading, photo }, setPhotoState] = useState({
     loading: Boolean(selectedPlace),
@@ -119,12 +127,39 @@ function PlaceDetailsCard({ onBack, onRequestAuth }) {
           Abrir en Google Maps
           <ExternalLink className="h-4 w-4" />
         </a>
+        <button
+          type="button"
+          onClick={onGetDirections}
+          disabled={directionsLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#9333ea] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#7e22ce] disabled:cursor-wait disabled:opacity-60"
+        >
+          {directionsLoading
+            ? <LoaderCircle className="h-4 w-4 animate-spin" />
+            : <Route className="h-4 w-4" />}
+          {directionsLoading
+            ? 'Calculando ruta...'
+            : route ? 'Quitar ruta' : 'Cómo llegar'}
+        </button>
+        {route && (
+          <p role="status" className="text-xs text-[var(--color-text-secondary)]">
+            Ruta peatonal: {(route.distanceMeters / 1000).toFixed(1)} km · {Math.ceil(route.durationSeconds / 60)} min aprox.
+          </p>
+        )}
+        {route && (
+          <p className="text-[10px] text-[var(--color-text-secondary)]">
+            Ruta peatonal calculada por el servicio del geoportal.
+          </p>
+        )}
+        {directionsError && (
+          <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{directionsError}</p>
+        )}
         <PlaceRatingsPanel
           place={{
             name: selectedPlace.name,
             type: selectedPlace.type,
             latitude: selectedPlace.latitude,
             longitude: selectedPlace.longitude,
+            trainingSpotId: selectedPlace.trainingSpotId,
           }}
           onRequestAuth={onRequestAuth}
         />
@@ -137,8 +172,35 @@ function PlaceDetailsCard({ onBack, onRequestAuth }) {
 function GeoportalContent() {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [authMode, setAuthMode] = useState(null);
-  const { selectedPlace, clearSelectedPlace } = useMapContext();
+  const { selectedPlace, clearSelectedPlace, userLocation, route } = useMapContext();
+  const { status: locationStatus, error: locationError, requestLocation } = useUserLocation();
+  const { getDirections, clearDirections, loading: directionsLoading, error: directionsError } = useDirections();
+  const pendingDirectionsRef = useRef(null);
   const selectedDetailsRef = useRef(null);
+  const selectedPlaceKey = selectedPlace
+    ? selectedPlace.trainingSpotId || `${selectedPlace.longitude},${selectedPlace.latitude}`
+    : null;
+  const lastSelectedPlaceKey = useRef(selectedPlaceKey);
+
+  const handleGetDirections = useCallback(async () => {
+    if (!selectedPlace) return;
+
+    const destinationKey = selectedPlace.trainingSpotId
+      || `${selectedPlace.longitude},${selectedPlace.latitude}`;
+    if (route?.destinationKey === destinationKey) {
+      clearDirections();
+      return;
+    }
+
+    if (!userLocation) {
+      pendingDirectionsRef.current = selectedPlace;
+      const locationFound = await requestLocation();
+      if (!locationFound) pendingDirectionsRef.current = null;
+      return;
+    }
+
+    await getDirections(selectedPlace);
+  }, [clearDirections, getDirections, requestLocation, route, selectedPlace, userLocation]);
 
   useEffect(() => {
     if (!selectedPlace) return;
@@ -148,6 +210,24 @@ function GeoportalContent() {
       block: 'start',
     });
   }, [selectedPlace]);
+
+  useEffect(() => {
+    const destination = pendingDirectionsRef.current;
+    if (!userLocation || !destination) return;
+
+    pendingDirectionsRef.current = null;
+    const destinationKey = destination.trainingSpotId
+      || `${destination.longitude},${destination.latitude}`;
+    if (destinationKey !== selectedPlaceKey) return;
+
+    getDirections(destination);
+  }, [getDirections, selectedPlaceKey, userLocation]);
+
+  useEffect(() => {
+    if (lastSelectedPlaceKey.current === selectedPlaceKey) return;
+    lastSelectedPlaceKey.current = selectedPlaceKey;
+    clearDirections();
+  }, [clearDirections, selectedPlaceKey]);
 
   return (
     <>
@@ -170,17 +250,24 @@ function GeoportalContent() {
             </button>
           </div>
           <div className="mt-3 shrink-0">
-            <CRSPanel />
+            <PlacesFilterPanel
+              locationStatus={locationStatus}
+              locationError={locationError}
+              onRequestLocation={requestLocation}
+            />
           </div>
           {selectedPlace ? (
             <div ref={selectedDetailsRef} className="mt-3 shrink-0 scroll-mt-3">
-              <PlaceDetailsCard onBack={clearSelectedPlace} onRequestAuth={() => setAuthMode('login')} />
+              <PlaceDetailsCard
+                onBack={clearSelectedPlace}
+                onRequestAuth={() => setAuthMode('login')}
+                onGetDirections={handleGetDirections}
+                directionsLoading={directionsLoading}
+                directionsError={directionsError}
+                route={route?.destinationKey === selectedPlaceKey ? route : null}
+              />
             </div>
-          ) : (
-            <div className="mt-3 shrink-0">
-              <LayerPanel />
-            </div>
-          )}
+          ) : null}
         </aside>
         {!isPanelOpen && (
           <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-[var(--color-bg-elevated)]">

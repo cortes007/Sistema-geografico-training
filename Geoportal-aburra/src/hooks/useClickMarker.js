@@ -77,6 +77,7 @@ export function useClickMarker() {
         coordinates: [Number(lon.toFixed(6)), Number(lat.toFixed(6))],
         longitude: Number(lon.toFixed(6)),
         latitude: Number(lat.toFixed(6)),
+        trainingSpotId: foundFeature.get('trainingSpotId') || null,
       };
 
       markerFeature.setGeometry(new Point(geometry.getCoordinates()));

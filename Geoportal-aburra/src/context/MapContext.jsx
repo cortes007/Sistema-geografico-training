@@ -10,6 +10,10 @@ export function MapProvider({ children }) {
   const [activeCRS, setActiveCRS] = useState('EPSG:4326');
   const [capturedCoord, setCapturedCoord] = useState(null); // [x, y] en EPSG:3857
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [userLocation, setUserLocation] = useState(null); // { latitude, longitude } en EPSG:4326
+  const [route, setRoute] = useState(null); // GeoJSON coordinates en EPSG:4326
+  const [ratingsVersion, setRatingsVersion] = useState(0);
+  const [trainingSpotsError, setTrainingSpotsError] = useState('');
   const [activeEquipmentTypes, setActiveEquipmentTypes] = useState(() =>
     Object.values(EQUIPMENT_TYPES).reduce((types, type) => ({ ...types, [type]: true }), {})
   );
@@ -75,6 +79,14 @@ export function MapProvider({ children }) {
     setSelectedPlace(null);
   }, []);
 
+  const clearRoute = useCallback(() => {
+    setRoute(null);
+  }, []);
+
+  const refreshPlaceRatings = useCallback(() => {
+    setRatingsVersion((version) => version + 1);
+  }, []);
+
   const value = useMemo(
     () => ({
       map,
@@ -90,6 +102,15 @@ export function MapProvider({ children }) {
       selectedPlace,
       setSelectedPlace,
       clearSelectedPlace,
+      userLocation,
+      setUserLocation,
+      route,
+      setRoute,
+      clearRoute,
+      ratingsVersion,
+      refreshPlaceRatings,
+      trainingSpotsError,
+      setTrainingSpotsError,
       activeEquipmentTypes,
       toggleEquipmentType,
     }),
@@ -103,6 +124,12 @@ export function MapProvider({ children }) {
       capturedCoord,
       selectedPlace,
       clearSelectedPlace,
+      userLocation,
+      route,
+      clearRoute,
+      ratingsVersion,
+      refreshPlaceRatings,
+      trainingSpotsError,
       activeEquipmentTypes,
       toggleEquipmentType,
     ]

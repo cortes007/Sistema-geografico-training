@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS public.calificaciones_lugares (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lugar_key TEXT NOT NULL CHECK (char_length(lugar_key) BETWEEN 1 AND 500),
+  training_spot_id TEXT,
   lugar_nombre TEXT NOT NULL CHECK (char_length(btrim(lugar_nombre)) > 0),
   lugar_tipo TEXT NOT NULL DEFAULT 'Lugar deportivo',
   latitud DOUBLE PRECISION NOT NULL CHECK (latitud BETWEEN -90 AND 90),
@@ -14,8 +15,13 @@ CREATE TABLE IF NOT EXISTS public.calificaciones_lugares (
   CONSTRAINT calificaciones_lugares_usuario_lugar_key UNIQUE (lugar_key, usuario_id)
 );
 
+ALTER TABLE public.calificaciones_lugares
+  ADD COLUMN IF NOT EXISTS training_spot_id TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_calificaciones_lugares_lugar_fecha
   ON public.calificaciones_lugares (lugar_key, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS idx_calificaciones_lugares_training_spot_id
+  ON public.calificaciones_lugares (training_spot_id);
 
 CREATE OR REPLACE FUNCTION public.actualizar_fecha_calificacion_lugar()
 RETURNS TRIGGER

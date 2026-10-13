@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useMapContext } from '../../context/MapContext';
 import {
   guardarCalificacionLugar,
   listarCalificacionesLugar,
@@ -53,7 +54,8 @@ function ReviewCard({ review, isCurrentUser }) {
 
 export default function PlaceRatingsPanel({ place, onRequestAuth }) {
   const { user } = useAuth();
-  const { name, type, latitude, longitude } = place;
+  const { refreshPlaceRatings } = useMapContext();
+  const { name, type, latitude, longitude, trainingSpotId } = place;
   const requestId = useRef(0);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,11 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
     setSuccess('');
     setSaving(true);
     try {
-      await guardarCalificacionLugar(place, { calificacion: rating, comentario: comment });
+      await guardarCalificacionLugar(
+        { name, type, latitude, longitude, trainingSpotId },
+        { calificacion: rating, comentario: comment }
+      );
+      refreshPlaceRatings();
       setSuccess('Tu opinión se guardó correctamente.');
       await loadReviews();
     } catch (reason) {

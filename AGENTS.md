@@ -35,3 +35,7 @@ La regla de oro de este proyecto es SOLID especificamente el **Single Responsibi
 ## 5. Formato de Respuesta del Agente
 *   Proporciona el código directamente sin explicaciones redundantes a menos que se te solicite.
 *   Si notas que mi petición viola el principio de Responsabilidad Única (SRP), corrígeme amablemente y propón la estructura de archivos correcta antes de escribir el código.
+
+## 6. Uso de Git
+*   No interactuar con el repositorio ni realizar cambios en él.
+*   Solo recomendar cambios y uso de comandos, mas no realizarlos.

@@ -4,6 +4,9 @@ import XYZ from 'ol/source/XYZ';
 import { useOpenMap } from '../../hooks/useOpenMap';
 import { useCoordinateCapture } from '../../hooks/useCoordinateCapture';
 import { useClickMarker } from '../../hooks/useClickMarker';
+import { useLocationOverlay } from '../../hooks/useLocationOverlay';
+import { useRouteOverlay } from '../../hooks/useRouteOverlay';
+import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import MapControls from './MapControls';
 import { useMapContext } from '../../context/MapContext';
 
@@ -14,6 +17,9 @@ export default function MapContainer() {
   useOpenMap(targetRef);
   useCoordinateCapture();
   useClickMarker();
+  useLocationOverlay();
+  useRouteOverlay();
+  const trainingSpotsError = useInitialTrainingSpots();
 
   useEffect(() => {
     if (!map || map.get('baseLayersReady')) return;
@@ -52,9 +58,9 @@ export default function MapContainer() {
     <div className="relative h-full w-full">
       <div ref={targetRef} className="h-full w-full" />
       {map && <MapControls />}
-      {toast && (
+      {(toast || trainingSpotsError) && (
         <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">
-          {toast}
+          {toast || trainingSpotsError}
         </div>
       )}
     </div>

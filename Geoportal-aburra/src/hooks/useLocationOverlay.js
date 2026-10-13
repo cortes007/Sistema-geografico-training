@@ -1,0 +1,79 @@
+import { useEffect } from 'react';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import { circular } from 'ol/geom/Polygon';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import { fromLonLat } from 'ol/proj';
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { useMapContext } from '../context/MapContext';
+import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
+
+const locationStyle = new Style({
+  image: new CircleStyle({
+    radius: 8,
+    fill: new Fill({ color: '#2563eb' }),
+    stroke: new Stroke({ color: '#ffffff', width: 3 }),
+  }),
+});
+const radiusStyle = new Style({
+  fill: new Fill({ color: 'rgba(37, 99, 235, 0.12)' }),
+  stroke: new Stroke({ color: '#2563eb', width: 2, lineDash: [8, 6] }),
+});
+
+export function useLocationOverlay() {
+  const { map, userLocation } = useMapContext();
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const radiusSource = new VectorSource();
+    const radiusLayer = new VectorLayer({ source: radiusSource, zIndex: 0 });
+    radiusLayer.set('locationRadiusLayer', true);
+    const markerSource = new VectorSource();
+    const markerLayer = new VectorLayer({ source: markerSource, zIndex: 900 });
+    markerLayer.set('userLocationLayer', true);
+    map.addLayer(radiusLayer);
+    map.addLayer(markerLayer);
+
+    return () => {
+      map.removeLayer(radiusLayer);
+      map.removeLayer(markerLayer);
+      radiusSource.clear();
+      markerSource.clear();
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const layers = map.getLayers().getArray();
+    const radiusLayer = layers.find((candidate) => candidate.get('locationRadiusLayer'));
+    const markerLayer = layers.find((candidate) => candidate.get('userLocationLayer'));
+    if (!radiusLayer || !markerLayer) return;
+
+    const radiusSource = radiusLayer.getSource();
+    const markerSource = markerLayer.getSource();
+    radiusSource.clear();
+    markerSource.clear();
+    if (!userLocation) return;
+
+    const projection = map.getView().getProjection();
+    const center = [userLocation.longitude, userLocation.latitude];
+    const radius = circular(center, NEARBY_SEARCH_RADIUS_METERS, 96);
+    radius.transform('EPSG:4326', projection);
+
+    const radiusFeature = new Feature(radius);
+    radiusFeature.setStyle(radiusStyle);
+    const markerFeature = new Feature(new Point(fromLonLat(center, projection)));
+    markerFeature.setStyle(locationStyle);
+    radiusSource.addFeature(radiusFeature);
+    markerSource.addFeature(markerFeature);
+
+    map.getView().fit(radius.getExtent(), {
+      padding: [60, 60, 60, 60],
+      maxZoom: 15,
+      duration: 500,
+    });
+  }, [map, userLocation]);
+}

@@ -7,6 +7,7 @@ export type LugarCalificable = {
   type: string;
   latitude: number;
   longitude: number;
+  trainingSpotId?: string | null;
 };
 
 export type CalificacionLugarInput = {
@@ -83,6 +84,7 @@ export async function guardarCalificacionLugar(
 
   const calificacion: CalificacionLugarInsert = {
     lugar_key: lugarKey,
+    training_spot_id: lugar.trainingSpotId ?? null,
     lugar_nombre: assertNonEmpty(lugar.name, 'El nombre del lugar'),
     lugar_tipo: lugar.type.trim() || 'Lugar deportivo',
     latitud: lugar.latitude,

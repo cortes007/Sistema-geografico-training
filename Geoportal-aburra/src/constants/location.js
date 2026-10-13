@@ -1,0 +1,1 @@
+export const NEARBY_SEARCH_RADIUS_METERS = 3000;

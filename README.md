@@ -112,6 +112,14 @@ Las personas registradas pueden dejar una calificación de una a cinco estrellas
 
 Para habilitar la funcionalidad en Supabase, ejecuta [`sql/calificaciones_lugares.sql`](./sql/calificaciones_lugares.sql) en el SQL Editor del proyecto. El script crea la tabla `public.calificaciones_lugares`, configura sus políticas de seguridad RLS y permite consultar opiniones públicamente, restringiendo la creación y actualización a la persona autenticada propietaria de cada opinión.
 
+## Ubicación, lugares cercanos y rutas
+
+El botón **Ubicación actual** solicita permiso del navegador y centra el mapa en una ubicación aproximada con un radio visual de 3 km. La geolocalización requiere HTTPS (excepto en localhost). El sidebar muestra hasta tres lugares calificados del radio, ordenados por una media bayesiana que considera tanto el promedio como la cantidad de opiniones y respeta los filtros de tipo activos. Los lugares sin calificaciones no entran en el ranking.
+
+Para habilitar el ranking en Supabase, ejecuta [`sql/lugares_cercanos_mejor_calificados.sql`](./sql/lugares_cercanos_mejor_calificados.sql) después de crear `public.calificaciones_lugares` con el script anterior. El script agrega `training_spot_id`, intenta asociar opiniones históricas por nombre, tipo y cercanía de hasta 30 m y crea la RPC `listar_calificaciones_agregadas_lugares`. Solo se devuelven promedios y recuentos agregados; el filtrado geográfico y la distancia se calculan en el navegador, por lo que la ubicación del usuario no se envía a Supabase.
+
+El botón **Cómo llegar** dibuja una ruta peatonal morada usando el endpoint de mismo origen `/api/routes/foot` (o el valor de mismo origen indicado en `VITE_ROUTE_API_URL`). Agrega las variables de `backend/.env.example` a tu `backend/.env` existente —sin reemplazar otras variables como `DATABASE_URL`—, configura `ROUTING_ENGINE_URL` con un motor OSRM-compatible privado que tenga un perfil peatonal y ejecuta `npm run start:routes` desde `backend/`. En desarrollo, Vite reenvía `/api` al servicio; en producción configura el proxy del servidor web para hacer lo mismo. La API responde con `coordinates` como pares `[longitud, latitud]`, `distanceMeters` y `durationSeconds`. El navegador rechaza endpoints de otro origen para no enviar la ubicación del usuario a un tercero. No se incluye ni se configura un proveedor público de rutas. No hay que agregar cambios adicionales a Supabase aparte de ejecutar ambos scripts indicados.
+
 ## Estructura del proyecto
 
 ```text
