@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 import { CRS_OPTIONS, getCrsLabel } from '../config/crsDefinitions';
 import { useLayerLoader } from './useLayerLoader';
 import { downloadGeoJSON, reprojectGeoJSON } from '../utils/gis/reproject';
@@ -20,16 +20,16 @@ export function useLayerManager() {
   const [targetCrsByLayer, setTargetCrsByLayer] = useState({});
 
   useEffect(() => {
-    if (!map || map.get('initialGeoJSONLoadStarted')) return;
+    if (!map || map.get('initialTrainingSpotsLoadStarted')) return;
 
-    map.set('initialGeoJSONLoadStarted', true);
+    map.set('initialTrainingSpotsLoadStarted', true);
     Promise.resolve().then(() => {
       setError(null);
       setLoading(true);
 
       return loadTrainingSpots()
         .catch((err) => {
-          map.set('initialGeoJSONLoadStarted', false);
+          map.set('initialTrainingSpotsLoadStarted', false);
           setError(err.message || 'No se pudo cargar la capa inicial.');
         })
         .finally(() => {
@@ -59,6 +59,8 @@ export function useLayerManager() {
   );
 
   const handleDownload = useCallback((layer) => {
+    if (!layer.rawGeojson) return;
+
     const targetCode = targetCrsByLayer[layer.id] || 'EPSG:4326';
     const reprojected = reprojectGeoJSON(layer.rawGeojson, layer.sourceCode, targetCode);
     downloadGeoJSON(
@@ -70,7 +72,7 @@ export function useLayerManager() {
   const handleTargetCrsChange = useCallback(
     (layerId, targetCode) => {
       const layer = layers.find((item) => item.id === layerId);
-      if (!layer) return;
+      if (!layer?.rawGeojson) return;
 
       try {
         reprojectLayerOnMap(layer, targetCode);

@@ -5,8 +5,9 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Circle as CircleStyle, Fill, Icon, Stroke, Style } from 'ol/style';
 import { toLonLat } from 'ol/proj';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 import { extractPlaceData } from '../utils/placeDetails';
+import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 
 const markerStyle = new Style({
   image: new CircleStyle({
@@ -23,6 +24,48 @@ const selectionStyle = new Style({
     scale: 0.8,
   }),
 });
+
+function findTrainingSpotNearPixel(map, pixel) {
+  const tolerance = 10;
+  const samplePixels = [
+    [pixel[0] - tolerance, pixel[1] - tolerance],
+    [pixel[0] + tolerance, pixel[1] - tolerance],
+    [pixel[0] - tolerance, pixel[1] + tolerance],
+    [pixel[0] + tolerance, pixel[1] + tolerance],
+  ];
+  const sampleCoordinates = samplePixels.map((samplePixel) => map.getCoordinateFromPixel(samplePixel));
+  const extent = [
+    Math.min(...sampleCoordinates.map(([x]) => x)),
+    Math.min(...sampleCoordinates.map(([, y]) => y)),
+    Math.max(...sampleCoordinates.map(([x]) => x)),
+    Math.max(...sampleCoordinates.map(([, y]) => y)),
+  ];
+  const layer = map.getLayers().getArray().find(
+    (candidate) => candidate.get('trainingSpotsLayer') === true
+  );
+  if (!layer?.getVisible()) return null;
+
+  const resolution = map.getView().getResolution();
+  const styleFunction = layer.getStyleFunction();
+  let nearestFeature = null;
+  let nearestDistance = tolerance;
+
+  layer.getFeaturesInExtent(extent).forEach((feature) => {
+    if (styleFunction && !styleFunction(feature, resolution)) return;
+
+    const geometry = getTrainingSpotPoint(feature.getGeometry());
+    if (!geometry || geometry.getType() !== 'Point') return;
+
+    const featurePixel = map.getPixelFromCoordinate(geometry.getCoordinates());
+    const distance = Math.hypot(featurePixel[0] - pixel[0], featurePixel[1] - pixel[1]);
+    if (distance > nearestDistance) return;
+
+    nearestFeature = feature;
+    nearestDistance = distance;
+  });
+
+  return nearestFeature;
+}
 
 export function useClickMarker() {
   const { map, setSelectedPlace, clearSelectedPlace } = useMapContext();
@@ -44,12 +87,16 @@ export function useClickMarker() {
       let foundFeature = null;
 
       map.forEachFeatureAtPixel(event.pixel, (feature) => {
-        if (feature.get('isSelectionMarker')) {
+        if (feature === markerFeature || feature.get('isSelectionMarker')) {
           return false;
         }
         foundFeature = feature;
         return true;
+      }, {
+        layerFilter: (layer) => layer.get('trainingSpotsLayer') === true,
+        hitTolerance: 10,
       });
+      if (!foundFeature) foundFeature = findTrainingSpotNearPixel(map, event.pixel);
 
       if (!foundFeature) {
         // No feature clicked, show black marker at click location
@@ -59,7 +106,7 @@ export function useClickMarker() {
         return;
       }
 
-      const geometry = foundFeature.getGeometry();
+      const geometry = getTrainingSpotPoint(foundFeature.getGeometry());
       if (!geometry || geometry.getType() !== 'Point') {
         markerFeature.setGeometry(null);
         clearSelectedPlace();
@@ -69,15 +116,20 @@ export function useClickMarker() {
       const [lon, lat] = toLonLat(geometry.getCoordinates());
       foundFeature.__lonLat = [lon, lat];
       const basePlace = extractPlaceData(foundFeature);
+      const spotId = foundFeature.get('trainingSpotId')
+        || foundFeature.get('id')
+        || foundFeature.getId();
+      const trainingSpotId = spotId === undefined || spotId === null ? null : String(spotId);
       const place = {
         ...basePlace,
+        id: trainingSpotId || basePlace.id,
         feature: foundFeature,
         openingHours: foundFeature.get('opening_hours') || foundFeature.get('openingHours') || '',
         type: basePlace.type || 'Lugar deportivo',
         coordinates: [Number(lon.toFixed(6)), Number(lat.toFixed(6))],
         longitude: Number(lon.toFixed(6)),
         latitude: Number(lat.toFixed(6)),
-        trainingSpotId: foundFeature.get('trainingSpotId') || null,
+        trainingSpotId,
       };
 
       markerFeature.setGeometry(new Point(geometry.getCoordinates()));

@@ -8,7 +8,7 @@ import { useLocationOverlay } from '../../hooks/useLocationOverlay';
 import { useRouteOverlay } from '../../hooks/useRouteOverlay';
 import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import MapControls from './MapControls';
-import { useMapContext } from '../../context/MapContext';
+import { useMapContext } from '../../context/useMapContext';
 
 export default function MapContainer() {
   const targetRef = useRef(null);

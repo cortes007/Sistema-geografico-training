@@ -4,7 +4,7 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { fromLonLat } from 'ol/proj';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 
 // Centro aproximado del Valle de Aburrá (sur del valle, Medellín/Envigado)
 const CENTER_LONLAT = [-75.58, 6.22];

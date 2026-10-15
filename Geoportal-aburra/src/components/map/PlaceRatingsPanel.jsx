@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useMapContext } from '../../context/MapContext';
+import { useMapContext } from '../../context/useMapContext';
 import {
   guardarCalificacionLugar,
   listarCalificacionesLugar,

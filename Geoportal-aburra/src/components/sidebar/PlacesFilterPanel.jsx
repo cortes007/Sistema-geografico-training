@@ -1,7 +1,7 @@
 import { LoaderCircle, MapPin, Star } from 'lucide-react';
 import { EQUIPMENT_TYPES, EQUIPMENT_TYPE_STYLES } from '../../constants/equipmentTypes';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../../constants/location';
-import { useMapContext } from '../../context/MapContext';
+import { useMapContext } from '../../context/useMapContext';
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces';
 
 function formatDistance(distanceMeters) {

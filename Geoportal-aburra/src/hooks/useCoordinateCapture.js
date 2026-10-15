@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 
 /**
  * Única responsabilidad: escuchar clics en el mapa y guardar la

@@ -1,8 +1,7 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { EQUIPMENT_TYPES } from '../constants/equipmentTypes';
-
-const MapContext = createContext(null);
+import { MapContext } from './mapContext';
 
 export function MapProvider({ children }) {
   const [map, setMap] = useState(null);
@@ -37,7 +36,10 @@ export function MapProvider({ children }) {
     const remainingLayers = layers.filter((layer) => layer.id !== id);
     setLayers(remainingLayers);
 
-    if (selectedPlace?.feature && target.olLayer.getSource()?.hasFeature(selectedPlace.feature)) {
+    const source = target.olLayer.getSource();
+    const selectedFeatureBelongsToLayer = source?.hasFeature?.(selectedPlace?.feature)
+      || (target.name === 'training_spots' && Boolean(selectedPlace?.trainingSpotId));
+    if (selectedPlace?.feature && selectedFeatureBelongsToLayer) {
       setSelectedPlace(null);
     }
 
@@ -45,7 +47,7 @@ export function MapProvider({ children }) {
 
     const remainingExtent = createEmpty();
     remainingLayers.forEach(({ olLayer }) => {
-      const extent = olLayer.getSource()?.getExtent();
+      const extent = olLayer.getSource()?.getExtent?.();
       if (extent && extent.every(Number.isFinite)) extend(remainingExtent, extent);
     });
 
@@ -136,10 +138,4 @@ export function MapProvider({ children }) {
   );
 
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
-}
-
-export function useMapContext() {
-  const ctx = useContext(MapContext);
-  if (!ctx) throw new Error('useMapContext debe usarse dentro de <MapProvider>');
-  return ctx;
 }

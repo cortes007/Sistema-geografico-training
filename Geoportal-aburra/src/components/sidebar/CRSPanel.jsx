@@ -1,4 +1,4 @@
-import { useMapContext } from '../../context/MapContext';
+import { useMapContext } from '../../context/useMapContext';
 import { CRS_OPTIONS } from '../../config/crsDefinitions';
 import CoordinateDisplay from '../ui/CoordinateDisplay';
 

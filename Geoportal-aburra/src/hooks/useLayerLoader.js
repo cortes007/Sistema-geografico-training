@@ -1,22 +1,59 @@
 import { useCallback, useEffect } from 'react';
+import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
+import MVT from 'ol/format/MVT';
 import VectorLayer from 'ol/layer/Vector';
+import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorSource from 'ol/source/Vector';
+import VectorTileSource from 'ol/source/VectorTile';
 import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
 import shp from 'shpjs';
 import JSZip from 'jszip';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../constants/equipmentTypes';
+import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
-import {
-  fetchTrainingSpots,
-  spotsToOlFeatures,
-  spotsToGeoJSON,
-} from '../utils/trainingSpots';
 
-function createMarkerStyle(color) {
+const TRAINING_SPOTS_TILE_URL =
+  'https://agxaidzgnbgnzihefbdf.supabase.co/functions/v1/mvt-training-spots?z={z}&x={x}&y={y}';
+
+function loadTrainingSpotsTile(tile, url) {
+  tile.setLoader(async (extent, resolution, projection) => {
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`La tesela MVT respondió con HTTP ${response.status}.`);
+      }
+
+      const data = await response.arrayBuffer();
+      const features = data.byteLength === 0
+        ? []
+        : tile.getFormat().readFeatures(data, {
+          extent,
+          featureProjection: projection,
+        });
+      tile.setFeatures(features);
+    } catch (error) {
+      console.error('No se pudo cargar la tesela MVT de training_spots.', error);
+      tile.onError();
+    }
+  });
+}
+
+function createMarkerStyle(color, useRepresentativePoint = false) {
   return new Style({
+    ...(useRepresentativePoint && {
+      geometry: (feature) => getTrainingSpotPoint(feature.getGeometry()),
+    }),
     image: new CircleStyle({
       radius: 6,
       fill: new Fill({ color }),
@@ -25,22 +62,25 @@ function createMarkerStyle(color) {
   });
 }
 
-function getFeatureStyle(feature, activeEquipmentTypes) {
-  const type = feature.get('equipmentType');
-  if (!type) return createMarkerStyle('#64748b');
-  if (type && !activeEquipmentTypes[type]) return null;
+function getFeatureStyle(feature, activeEquipmentTypes, useRepresentativePoint = false) {
+  const type = feature.get('equipmentType') || getEquipmentTypeFromProperties(feature.getProperties());
+  const palette = type ? EQUIPMENT_TYPE_STYLES[type] : null;
+  if (!palette) return createMarkerStyle('#64748b', useRepresentativePoint);
+  if (!activeEquipmentTypes[type]) return null;
 
-  const palette = EQUIPMENT_TYPE_STYLES[type];
-
-  return createMarkerStyle(palette.color);
+  return createMarkerStyle(palette.color, useRepresentativePoint);
 }
 
 export function useLayerLoader() {
   const { map, addLayer, layers, activeEquipmentTypes } = useMapContext();
 
   useEffect(() => {
-    layers.forEach(({ olLayer }) => {
-      olLayer.setStyle((feature) => getFeatureStyle(feature, activeEquipmentTypes));
+    layers.forEach(({ olLayer, name }) => {
+      olLayer.setStyle((feature) => getFeatureStyle(
+        feature,
+        activeEquipmentTypes,
+        name === 'training_spots'
+      ));
     });
   }, [layers, activeEquipmentTypes]);
 
@@ -107,39 +147,40 @@ export function useLayerLoader() {
     [addVectorLayer]
   );
 
-  /** Carga lugares deportivos desde training_spots. Las geometrías llegan en EPSG:4326. */
-  const loadTrainingSpots = useCallback(async () => {
+  /** Carga lugares deportivos desde las teselas vectoriales MVT de Supabase. */
+  const loadTrainingSpots = useCallback(() => {
     if (!map) {
       throw new Error('El mapa aún no está listo.');
     }
 
-    const spots = await fetchTrainingSpots();
-    const features = spotsToOlFeatures(spots);
-
-    features.forEach((feature) => {
-      const type = getEquipmentTypeFromProperties(feature.getProperties());
-      feature.set('equipmentType', type);
+    const format = new MVT({ featureClass: Feature });
+    const source = new VectorTileSource({
+      format,
+      url: TRAINING_SPOTS_TILE_URL,
+      tileSize: 256,
+      minZoom: 0,
+      maxZoom: 22,
+      tileLoadFunction: loadTrainingSpotsTile,
     });
-
-    const source = new VectorSource({ features });
-    const olLayer = new VectorLayer({
+    const olLayer = new VectorTileLayer({
       source,
-      style: (feature) => getFeatureStyle(feature, activeEquipmentTypes),
+      style: (feature) => getFeatureStyle(feature, activeEquipmentTypes, true),
+      minZoom: 0,
+      maxZoom: 22,
+      renderMode: 'vector',
+      preload: 1,
     });
+    olLayer.set('trainingSpotsLayer', true);
     map.addLayer(olLayer);
-
-    const extent = source.getExtent();
-    if (extent && extent.every(Number.isFinite)) {
-      map.getView().fit(extent, { padding: [40, 40, 40, 40], maxZoom: 17, duration: 400 });
-    }
 
     addLayer({
       id: crypto.randomUUID(),
+      layerKey: 'training_spots|mvt',
       name: 'training_spots',
       olLayer,
-      sourceCode: 'EPSG:4326',
-      sourceCRS: 'WGS 84 (EPSG:4326)',
-      rawGeojson: spotsToGeoJSON(spots),
+      sourceCode: 'EPSG:3857',
+      sourceCRS: 'Vector Tiles MVT (EPSG:3857)',
+      rawGeojson: null,
       visible: true,
     });
   }, [map, addLayer, activeEquipmentTypes]);

@@ -34,7 +34,7 @@ export function parsePrj(prjText) {
   // asumimos WGS84 para no romper la carga del archivo.
   try {
    parseWKT(prjText);
-  } catch (error) {
+  } catch {
    return { code: 'EPSG:4326', name: `${name} (no se pudo interpretar, se asume WGS84)`, epsg: null, wkt: prjText };
   }
 

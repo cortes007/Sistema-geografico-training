@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Compass, Layers, Minus, Plus } from 'lucide-react';
-import { useMapContext } from '../../context/MapContext';
+import { useMapContext } from '../../context/useMapContext';
 
 export default function MapControls() {
   const { map } = useMapContext();

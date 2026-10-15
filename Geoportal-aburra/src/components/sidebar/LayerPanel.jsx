@@ -92,6 +92,7 @@ export default function LayerPanel() {
               const source = getCrsDetails(layer.sourceCode);
               const target = getCrsDetails(targetCode);
               const isReprojected = layer.sourceCode !== targetCode;
+              const supportsGeoJSON = Boolean(layer.rawGeojson);
 
               return (
                 <>
@@ -111,7 +112,7 @@ export default function LayerPanel() {
               CRS original: <span className="font-medium text-[var(--color-text-primary)]">{layer.sourceCRS}</span>
             </p>
 
-            <div className="mt-2 rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] p-2">
+            {supportsGeoJSON ? <div className="mt-2 rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] p-2">
               <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
                 <ArrowRightLeft className="h-3.5 w-3.5" />
                 Transformación aplicada
@@ -138,9 +139,13 @@ export default function LayerPanel() {
               <p className="mt-1 text-[10px] text-[var(--color-text-secondary)]">
                 Vista del mapa: EPSG:3857. La posición geográfica se conserva.
               </p>
-            </div>
+            </div> : (
+              <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                Capa MVT: no ofrece exportación GeoJSON ni reproyección desde el cliente.
+              </p>
+            )}
 
-            <div className="mt-2 flex items-center gap-1">
+            {supportsGeoJSON && <div className="mt-2 flex items-center gap-1">
               <select
                 aria-label={`CRS de visualización para ${layer.name}`}
                 className="flex-1 rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-2 py-1.5 text-xs text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)]"
@@ -158,7 +163,7 @@ export default function LayerPanel() {
               >
                 <Download className="h-4 w-4" />
               </button>
-            </div>
+            </div>}
                 </>
               );
             })()}

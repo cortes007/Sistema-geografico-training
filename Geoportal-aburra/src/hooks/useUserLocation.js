@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 
 function getGeolocationError(error) {
   if (error.code === 1) {

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 import { getWalkingRoute } from '../services/routingService';
 
 export function useDirections() {

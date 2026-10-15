@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 import { useLayerLoader } from './useLayerLoader';
 
 export function useInitialTrainingSpots() {
@@ -7,14 +7,14 @@ export function useInitialTrainingSpots() {
   const { loadTrainingSpots } = useLayerLoader();
 
   useEffect(() => {
-    if (!map || map.get('initialGeoJSONLoadStarted')) return;
+    if (!map || map.get('initialTrainingSpotsLoadStarted')) return;
 
-    map.set('initialGeoJSONLoadStarted', true);
+    map.set('initialTrainingSpotsLoadStarted', true);
     Promise.resolve()
       .then(loadTrainingSpots)
       .then(() => setTrainingSpotsError(''))
       .catch((reason) => {
-        map.set('initialGeoJSONLoadStarted', false);
+        map.set('initialTrainingSpotsLoadStarted', false);
         setTrainingSpotsError(reason.message || 'No se pudo cargar la capa inicial de lugares.');
       });
   }, [loadTrainingSpots, map, setTrainingSpotsError]);

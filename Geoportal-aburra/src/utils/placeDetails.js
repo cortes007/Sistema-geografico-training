@@ -25,13 +25,15 @@ export function extractPlaceData(feature) {
     'Lugar deportivo';
 
   const type =
-    getPropertyValue(properties, ['tipo', 'type', 'category', 'amenity']) ||
+    getPropertyValue(properties, ['tipo', 'type', 'category', 'leisure', 'amenity']) ||
     'Lugar deportivo';
 
   return {
     id: properties.id || `${name}-${coords.join('-')}`,
     name,
     type,
+    description: getPropertyValue(properties, ['description', 'note']),
+    city: getPropertyValue(properties, ['city', 'addr:city']),
     coordinates: Array.isArray(coords) && coords.length >= 2 ? [coords[0], coords[1]] : [null, null],
     longitude: Array.isArray(coords) && coords.length >= 2 ? coords[0] : null,
     latitude: Array.isArray(coords) && coords.length >= 2 ? coords[1] : null,

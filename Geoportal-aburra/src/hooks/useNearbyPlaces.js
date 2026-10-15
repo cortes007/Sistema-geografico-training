@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMemo } from 'react';
-import { toLonLat } from 'ol/proj';
-import { useMapContext } from '../context/MapContext';
+import { fromLonLat, toLonLat } from 'ol/proj';
+import TileState from 'ol/TileState';
+import { useMapContext } from '../context/useMapContext';
 import { listarCalificacionesAgregadasLugares } from '../services/nearbyPlacesService';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
+import { getEquipmentTypeFromProperties } from '../constants/equipmentTypes';
+import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 
 function distanceBetweenCoordinates(first, second) {
   const radians = (degrees) => (degrees * Math.PI) / 180;
@@ -32,6 +35,7 @@ export function useNearbyPlaces() {
   const [ratingAggregates, setRatingAggregates] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [trainingSpotFeatures, setTrainingSpotFeatures] = useState([]);
 
   useEffect(() => {
     const currentRequest = ++requestId.current;
@@ -62,21 +66,103 @@ export function useNearbyPlaces() {
     };
   }, [ratingsVersion, userLocation]);
 
+  useEffect(() => {
+    if (!userLocation || !map) {
+      return undefined;
+    }
+
+    const tileCollections = [];
+    const localFeatures = [];
+    const updateFeatures = () => {
+      const featuresById = new Map();
+      localFeatures.forEach((feature) => {
+        const id = feature.get('trainingSpotId') ?? feature.get('id') ?? feature.getId();
+        if (id !== undefined && id !== null) featuresById.set(String(id), feature);
+      });
+      tileCollections.forEach((tiles) => {
+        tiles.forEach((tile) => {
+          tile.getSourceTiles().forEach((sourceTile) => {
+            if (sourceTile.getState() !== TileState.LOADED) return;
+
+            (sourceTile.getFeatures() || []).forEach((feature) => {
+              const properties = feature.getProperties();
+              const id = feature.get('trainingSpotId') ?? feature.get('id') ?? feature.getId();
+              const key = id ?? `${properties.name || ''}:${featuresById.size}`;
+              featuresById.set(String(key), feature);
+            });
+          });
+        });
+      });
+      setTrainingSpotFeatures([...featuresById.values()]);
+    };
+
+    layers
+      .filter((layer) => layer.name === 'training_spots')
+      .forEach((layer) => {
+        const source = layer.olLayer.getSource();
+        if (source?.getFeatures) {
+          localFeatures.push(...source.getFeatures());
+          return;
+        }
+
+        if (!source?.getTileGrid || !source?.getTile) return;
+
+        const projection = map.getView().getProjection();
+        const [centerX, centerY] = fromLonLat(
+          [userLocation.longitude, userLocation.latitude],
+          projection
+        );
+        const radius = NEARBY_SEARCH_RADIUS_METERS;
+        const extent = [
+          centerX - radius,
+          centerY - radius,
+          centerX + radius,
+          centerY + radius,
+        ];
+        const tileGrid = source.getTileGrid();
+        const zoom = tileGrid.getZForResolution(map.getView().getResolution());
+        const tileRange = tileGrid.getTileRangeForExtentAndZ(extent, zoom);
+        const tiles = [];
+        tileCollections.push(tiles);
+
+        source.on('tileloadend', updateFeatures);
+        source.on('tileloaderror', updateFeatures);
+
+        for (let x = tileRange.minX; x <= tileRange.maxX; x += 1) {
+          for (let y = tileRange.minY; y <= tileRange.maxY; y += 1) {
+            tiles.push(source.getTile(zoom, x, y, 1, projection));
+          }
+        }
+      });
+
+    updateFeatures();
+
+    return () => {
+      layers
+        .filter((layer) => layer.name === 'training_spots')
+        .forEach((layer) => {
+          const source = layer.olLayer.getSource();
+          source?.un('tileloadend', updateFeatures);
+          source?.un('tileloaderror', updateFeatures);
+        });
+    };
+  }, [layers, map, userLocation]);
+
   const places = useMemo(() => {
-    if (!userLocation || !map || !ratingAggregates) return [];
+    const trainingSpotsLoaded = layers.some((layer) => layer.name === 'training_spots');
+    if (!userLocation || !map || !ratingAggregates || !trainingSpotsLoaded) return [];
 
     const ratingsBySpot = new Map(
       ratingAggregates.map((rating) => [rating.trainingSpotId, rating])
     );
     const userCoordinates = [userLocation.longitude, userLocation.latitude];
 
-    return layers
-      .filter((layer) => layer.name === 'training_spots')
-      .flatMap((layer) => layer.olLayer.getSource().getFeatures())
+    return trainingSpotFeatures
       .flatMap((feature) => {
-        const trainingSpotId = feature.get('trainingSpotId');
-        const equipmentType = feature.get('equipmentType');
-        const geometry = feature.getGeometry();
+        const trainingSpotId = feature.get('trainingSpotId') ?? feature.get('id') ?? feature.getId();
+        const equipmentType = feature.get('equipmentType')
+          || getEquipmentTypeFromProperties(feature.getProperties());
+        const geometry = getTrainingSpotPoint(feature.getGeometry());
         const rating = ratingsBySpot.get(String(trainingSpotId));
         if (
           !trainingSpotId
@@ -116,7 +202,7 @@ export function useNearbyPlaces() {
         || first.distanceMeters - second.distanceMeters
       ))
       .slice(0, 3);
-  }, [activeEquipmentTypes, layers, map, ratingAggregates, userLocation]);
+  }, [activeEquipmentTypes, layers, map, ratingAggregates, trainingSpotFeatures, userLocation]);
 
   const selectPlace = useCallback((place) => {
     setSelectedPlace({

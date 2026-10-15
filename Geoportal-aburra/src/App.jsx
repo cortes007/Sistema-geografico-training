@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft, Route, LoaderCircle } from 'lucide-react';
-import { useMapContext } from './context/MapContext';
-import { MapProvider } from './context/MapContext';
+import { useMapContext } from './context/useMapContext';
+import { MapProvider } from './context/MapContext.jsx';
 import MapContainer from './components/map/MapContainer';
 import PlacesFilterPanel from './components/sidebar/PlacesFilterPanel';
 import AuthPanel from './components/auth/AuthPanel';
@@ -163,7 +163,14 @@ function PlaceDetailsCard({
           }}
           onRequestAuth={onRequestAuth}
         />
-        <MeetupsPanel spotId={String(selectedPlace.feature.getId())} />
+        <MeetupsPanel
+          spotId={String(
+            selectedPlace.trainingSpotId
+              ?? selectedPlace.feature.get('id')
+              ?? selectedPlace.feature.getId()
+              ?? ''
+          )}
+        />
       </div>
     </div>
   );

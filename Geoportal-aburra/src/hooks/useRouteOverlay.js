@@ -5,7 +5,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
 import { Stroke, Style } from 'ol/style';
-import { useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/useMapContext';
 
 const routeStyle = new Style({
   stroke: new Stroke({
