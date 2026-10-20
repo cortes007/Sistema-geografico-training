@@ -6,10 +6,11 @@ import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
 import { Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
+import { THEME_COLORS } from '../constants/themeColors';
 
 const routeStyle = new Style({
   stroke: new Stroke({
-    color: '#9333ea',
+    color: THEME_COLORS.accent,
     width: 5,
     lineCap: 'round',
     lineJoin: 'round',

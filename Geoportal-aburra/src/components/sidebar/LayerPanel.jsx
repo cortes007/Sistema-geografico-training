@@ -35,7 +35,7 @@ export default function LayerPanel() {
       <div>
         <button
           onClick={openFilePicker}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-3 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:bg-[var(--color-accent-secondary)] hover:shadow-xl"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-3 py-2.5 text-sm font-medium text-[var(--color-on-brand)] shadow-lg transition-all duration-200 hover:bg-[var(--color-brand-light)] hover:shadow-xl"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           Cargar capa (.geojson / .zip)
@@ -60,15 +60,20 @@ export default function LayerPanel() {
               key={type}
               className={`flex cursor-pointer items-center gap-2 rounded-full border px-2.5 py-1 text-xs transition-all duration-200 ${
                 activeEquipmentTypes[type]
-                  ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/20 text-[var(--color-text-primary)]'
+                  ? 'text-[var(--color-text-primary)]'
                   : 'border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'
               }`}
+              style={activeEquipmentTypes[type] ? {
+                borderColor: EQUIPMENT_TYPE_STYLES[type].color,
+                backgroundColor: `${EQUIPMENT_TYPE_STYLES[type].color}20`,
+              } : undefined}
             >
               <input
                 type="checkbox"
                 checked={activeEquipmentTypes[type]}
                 onChange={() => toggleEquipmentType(type)}
                 className="h-4 w-4 rounded border-[var(--color-bg-elevated)]"
+                style={{ accentColor: EQUIPMENT_TYPE_STYLES[type].color }}
               />
               <span
                 className="h-2.5 w-2.5 rounded-full"

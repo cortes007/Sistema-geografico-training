@@ -5,20 +5,25 @@ import { circular } from 'ol/geom/Polygon';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Icon, Fill, Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
+import { colorWithAlpha, THEME_COLORS } from '../constants/themeColors';
 
+const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.brand}" opacity="0.28"><animate attributeName="r" values="8;21;8" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.55;0;0.55" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.white}" stroke="${THEME_COLORS.brand}" stroke-width="3"/></svg>`;
 const locationStyle = new Style({
-  image: new CircleStyle({
-    radius: 8,
-    fill: new Fill({ color: '#2563eb' }),
-    stroke: new Stroke({ color: '#ffffff', width: 3 }),
+  image: new Icon({
+    src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(locationSvg)}`,
+    anchor: [0.5, 0.5],
   }),
 });
 const radiusStyle = new Style({
-  fill: new Fill({ color: 'rgba(37, 99, 235, 0.12)' }),
-  stroke: new Stroke({ color: '#2563eb', width: 2, lineDash: [8, 6] }),
+  fill: new Fill({ color: colorWithAlpha(THEME_COLORS.accent, 0.09) }),
+  stroke: new Stroke({
+    color: colorWithAlpha(THEME_COLORS.accent, 0.8),
+    width: 2,
+    lineDash: [8, 6],
+  }),
 });
 
 export function useLocationOverlay() {

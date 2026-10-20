@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { extractPlaceData, buildPlaceImageQuery } from './placeDetails.js';
+import { extractPlaceData, buildPlaceImageQuery, buildFallbackPlaceImage } from './placeDetails.js';
 
 test('extractPlaceData normalizes GeoJSON feature properties', () => {
   const feature = {
@@ -32,4 +32,12 @@ test('buildPlaceImageQuery uses a stable category label for the place image', ()
   const query = buildPlaceImageQuery(place);
 
   assert.match(query, /gimnasio/i);
+});
+
+test('fallback place image uses the geoportal brand gradient', () => {
+  const image = buildFallbackPlaceImage({ name: 'Parque de calistenia' });
+  const svg = decodeURIComponent(image.split(',')[1]);
+
+  assert.match(svg, /stop-color="#14301F"/);
+  assert.match(svg, /stop-color="#7C3AED"/);
 });

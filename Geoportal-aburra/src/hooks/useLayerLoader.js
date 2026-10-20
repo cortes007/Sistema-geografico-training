@@ -11,6 +11,7 @@ import shp from 'shpjs';
 import JSZip from 'jszip';
 import { useMapContext } from '../context/useMapContext';
 import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../constants/equipmentTypes';
+import { THEME_COLORS } from '../constants/themeColors';
 import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
@@ -57,7 +58,7 @@ function createMarkerStyle(color, useRepresentativePoint = false) {
     image: new CircleStyle({
       radius: 6,
       fill: new Fill({ color }),
-      stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
+      stroke: new Stroke({ color: THEME_COLORS.white, width: 2 }),
     }),
   });
 }
@@ -65,7 +66,7 @@ function createMarkerStyle(color, useRepresentativePoint = false) {
 function getFeatureStyle(feature, activeEquipmentTypes, useRepresentativePoint = false) {
   const type = feature.get('equipmentType') || getEquipmentTypeFromProperties(feature.getProperties());
   const palette = type ? EQUIPMENT_TYPE_STYLES[type] : null;
-  if (!palette) return createMarkerStyle('#64748b', useRepresentativePoint);
+  if (!palette) return createMarkerStyle(THEME_COLORS.muted, useRepresentativePoint);
   if (!activeEquipmentTypes[type]) return null;
 
   return createMarkerStyle(palette.color, useRepresentativePoint);

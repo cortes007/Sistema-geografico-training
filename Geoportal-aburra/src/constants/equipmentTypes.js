@@ -1,3 +1,5 @@
+import { colorWithAlpha, THEME_COLORS } from './themeColors';
+
 export const EQUIPMENT_TYPES = {
   gym: 'gimnasio',
   outdoorGym: 'gimnasio al aire libre',
@@ -6,18 +8,18 @@ export const EQUIPMENT_TYPES = {
 
 export const EQUIPMENT_TYPE_STYLES = {
   [EQUIPMENT_TYPES.gym]: {
-    color: '#2563eb',
-    fill: 'rgba(37, 99, 235, 0.2)',
+    color: THEME_COLORS.gym,
+    fill: colorWithAlpha(THEME_COLORS.gym, 0.2),
     label: 'Gimnasio',
   },
   [EQUIPMENT_TYPES.outdoorGym]: {
-    color: '#15b818',
-    fill: 'rgba(128, 245, 11, 0.2)',
+    color: THEME_COLORS.outdoor,
+    fill: colorWithAlpha(THEME_COLORS.outdoor, 0.2),
     label: 'Training al aire libre',
   },
   [EQUIPMENT_TYPES.sportsCentre]: {
-    color: '#dc2626',
-    fill: 'rgba(220, 38, 38, 0.2)',
+    color: THEME_COLORS.center,
+    fill: colorWithAlpha(THEME_COLORS.center, 0.2),
     label: 'Centros deportivos',
   },
 };

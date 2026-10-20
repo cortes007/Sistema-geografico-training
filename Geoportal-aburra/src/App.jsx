@@ -100,7 +100,7 @@ function PlaceDetailsCard({
             <MapPin className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate text-base font-bold text-[var(--color-text-primary)]">{selectedPlace.name}</h2>
+            <h2 className="truncate text-base font-bold text-[var(--color-brand-light)]">{selectedPlace.name}</h2>
             <p className="text-xs text-[var(--color-text-secondary)]">{selectedPlace.type} · Lugar deportivo</p>
           </div>
         </div>
@@ -117,21 +117,11 @@ function PlaceDetailsCard({
           <span>{selectedPlace.latitude}, {selectedPlace.longitude}</span>
         </div>
 
-        <a
-          href={googleMapsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-[var(--color-accent-secondary)] hover:shadow-xl"
-        >
-          <Navigation className="h-4 w-4" />
-          Abrir en Google Maps
-          <ExternalLink className="h-4 w-4" />
-        </a>
         <button
           type="button"
           onClick={onGetDirections}
           disabled={directionsLoading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#9333ea] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#7e22ce] disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
         >
           {directionsLoading
             ? <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -140,6 +130,16 @@ function PlaceDetailsCard({
             ? 'Calculando ruta...'
             : route ? 'Quitar ruta' : 'Cómo llegar'}
         </button>
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors hover:bg-[var(--color-brand)]/10"
+        >
+          <Navigation className="h-4 w-4" />
+          Abrir en Google Maps
+          <ExternalLink className="h-4 w-4" />
+        </a>
         {route && (
           <p role="status" className="text-xs text-[var(--color-text-secondary)]">
             Ruta peatonal: {(route.distanceMeters / 1000).toFixed(1)} km · {Math.ceil(route.durationSeconds / 60)} min aprox.
@@ -245,11 +245,11 @@ function GeoportalContent() {
         <AuthPanel mode={authMode} setMode={setAuthMode} isSidebarOpen={isPanelOpen} />
         <aside
           id="geoportal-sidebar"
-          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-3 text-[13px] shadow-2xl backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
+          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-3 text-[13px] shadow-2xl backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
         >
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h1 className="text-base font-semibold text-[var(--color-text-primary)]">Geoportal Deportivo Valle de Aburrá</h1>
+              <h1 className="text-base font-semibold text-[var(--color-brand-light)]">Geoportal Deportivo Valle de Aburrá</h1>
               <p className="text-xs text-[var(--color-text-secondary)]">Lugares de entrenamiento, gimnasios y centros deportivos</p>
             </div>
             <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="rounded p-1 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">

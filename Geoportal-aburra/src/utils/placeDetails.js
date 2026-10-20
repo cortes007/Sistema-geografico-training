@@ -1,3 +1,5 @@
+import { THEME_COLORS } from '../constants/themeColors.js';
+
 function normalizeText(value) {
   if (value === null || value === undefined) return '';
   return String(value).trim().replace(/\s+/g, ' ');
@@ -69,16 +71,16 @@ export function buildFallbackPlaceImage(place) {
     <svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
       <defs>
         <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#dbeafe"/>
-          <stop offset="100%" stop-color="#e2e8f0"/>
+          <stop offset="0%" stop-color="${THEME_COLORS.brandDark}"/>
+          <stop offset="100%" stop-color="${THEME_COLORS.accent}"/>
         </linearGradient>
       </defs>
       <rect width="900" height="600" fill="url(#bg)"/>
-      <circle cx="450" cy="230" r="120" fill="#1d4ed8" opacity="0.18"/>
-      <path d="M225 390 C 310 310, 400 318, 450 390 S 610 470, 675 390 L 675 438 L 225 438 Z" fill="#2563eb" opacity="0.82"/>
-      <path d="M255 355 L 318 305 L 385 350 L 450 285 L 520 355 L 590 314 L 645 355 L 645 438 L 255 438 Z" fill="#1e3a8a" opacity="0.28"/>
-      <text x="450" y="170" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700" fill="#0f172a">${safeLabel}</text>
-      <text x="450" y="520" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#334155">Geoportal Valle de Aburrá</text>
+      <circle cx="450" cy="230" r="120" fill="${THEME_COLORS.brandLight}" opacity="0.18"/>
+      <path d="M225 390 C 310 310, 400 318, 450 390 S 610 470, 675 390 L 675 438 L 225 438 Z" fill="${THEME_COLORS.brand}" opacity="0.82"/>
+      <path d="M255 355 L 318 305 L 385 350 L 450 285 L 520 355 L 590 314 L 645 355 L 645 438 L 255 438 Z" fill="${THEME_COLORS.white}" opacity="0.28"/>
+      <text x="450" y="170" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700" fill="${THEME_COLORS.textPrimary}">${safeLabel}</text>
+      <text x="450" y="520" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="${THEME_COLORS.textPrimary}">Geoportal Valle de Aburrá</text>
     </svg>
   `;
 
@@ -128,6 +130,5 @@ export async function fetchPlaceImage(place) {
     const wikimediaUrl = await searchWikimediaByName(name);
     if (wikimediaUrl) return wikimediaUrl;
   }
-
   return buildFallbackPlaceImage(place);
 }

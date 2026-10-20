@@ -96,7 +96,7 @@ function AuthForm({ mode, onClose, onChangeMode }) {
           {status.error && <p role="alert" className="rounded-xl bg-[var(--color-accent-danger)]/20 px-3 py-2.5 text-sm text-[var(--color-accent-danger)]">{status.error}</p>}
           {status.success && <p role="status" className="rounded-xl bg-[var(--color-accent-success)]/20 px-3 py-2.5 text-sm text-[var(--color-accent-success)]">{status.success}</p>}
 
-          <button type="submit" disabled={status.loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-[var(--color-accent-secondary)] hover:shadow-xl disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={status.loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent-primary)] px-4 py-3 text-sm font-semibold text-[var(--color-on-brand)] shadow-lg transition-all duration-200 hover:bg-[var(--color-brand-light)] hover:shadow-xl disabled:cursor-wait disabled:opacity-60">
             {isRegister ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
             {status.loading ? 'Procesando...' : isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
@@ -139,7 +139,7 @@ export default function AuthPanel({ mode, setMode, isSidebarOpen }) {
           <LogIn className="h-4 w-4" />
           Iniciar sesión
         </button>
-        <button type="button" onClick={() => setMode('register')} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-secondary)]">
+        <button type="button" onClick={() => setMode('register')} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)]">
           <UserPlus className="h-4 w-4" />
           Registrarse
         </button>

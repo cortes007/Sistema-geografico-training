@@ -55,7 +55,7 @@ function EventForm({ spotId, initialValues = emptyForm, onSaved, onCancel, event
       ))}
       {error && <p role="alert" className="rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={saving} className="rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-secondary)] disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
+        <button type="submit" disabled={saving} className="rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)] disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
         <button type="button" onClick={onCancel} className="rounded-lg bg-[var(--color-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-secondary)]">Cancelar</button>
       </div>
     </form>
@@ -112,7 +112,7 @@ function EventCard({ event, user, onChange }) {
       </div>
       {event.descripcion && <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.descripcion}</p>}
       <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.asistentesConfirmados} asistentes</p>
-      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-primary)] disabled:opacity-60">{registered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
+      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-accent-primary)] disabled:opacity-60">{registered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
       {isOrganizer && (
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={() => setEditing((value) => !value)} className="text-xs font-semibold text-[var(--color-accent-primary)] hover:text-[var(--color-accent-secondary)]">Editar</button>
@@ -152,7 +152,7 @@ export default function MeetupsPanel({ spotId }) {
     <section className="mt-4 border-t border-[var(--color-bg-elevated)] pt-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-[var(--color-text-primary)]">Quedadas próximas</h3>
-        {user && <button type="button" onClick={() => setCreating((value) => !value)} className="rounded-lg bg-[var(--color-accent-primary)] px-2.5 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:bg-[var(--color-accent-secondary)]">Crear quedada aquí</button>}
+        {user && <button type="button" onClick={() => setCreating((value) => !value)} className="rounded-lg bg-[var(--color-accent-primary)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)]">Crear quedada aquí</button>}
       </div>
       {creating && <EventForm spotId={spotId} onSaved={() => { setCreating(false); load(); }} onCancel={() => setCreating(false)} />}
       {loading && <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando quedadas...</p>}

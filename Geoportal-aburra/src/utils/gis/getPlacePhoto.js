@@ -1,4 +1,5 @@
 import { toLonLat } from 'ol/proj';
+import { buildFallbackPlaceImage } from '../placeDetails.js';
 
 const photoCache = new Map(); // featureId -> resultado (o null)
 const photoRequests = new Map(); // featureId -> promesa en curso
@@ -173,30 +174,8 @@ async function getMapillaryPhoto(lat, lon) {
 }
 
 function getSmartPlaceholder(props) {
-  const tipo = String(props.sport || props.leisure || props.amenity || '').toLowerCase();
-  let categoria = 'deporte_default';
-
-  if (
-    tipo.includes('fitness') ||
-    tipo.includes('calisthenics') ||
-    tipo.includes('gym') ||
-    tipo.includes('gimnasio')
-  ) {
-    categoria = 'gimnasio_aire_libre';
-  } else if (
-    tipo.includes('soccer') ||
-    tipo.includes('football') ||
-    tipo.includes('cancha') ||
-    tipo.includes('pitch')
-  ) {
-    categoria = 'cancha_futbol';
-  } else if (tipo.includes('park') || tipo.includes('parque') || tipo.includes('recreation')) {
-    categoria = 'parque_urbano';
-  } else if (tipo.includes('basketball') || tipo.includes('tenis') || tipo.includes('court')) {
-    categoria = 'cancha_multiple';
-  }
-
-  const url = `/assets/placeholders/${categoria}.svg`;
+  const label = props.name || props.nombre || props.sport || props.leisure || 'Lugar deportivo';
+  const url = buildFallbackPlaceImage({ name: label });
 
   return {
     url,
