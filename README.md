@@ -112,9 +112,19 @@ Las personas registradas pueden dejar una calificación de una a cinco estrellas
 
 Para habilitar la funcionalidad en Supabase, ejecuta [`sql/calificaciones_lugares.sql`](./sql/calificaciones_lugares.sql) en el SQL Editor del proyecto. El script crea la tabla `public.calificaciones_lugares`, configura sus políticas de seguridad RLS y permite consultar opiniones públicamente, restringiendo la creación y actualización a la persona autenticada propietaria de cada opinión.
 
+## Diseño y accesibilidad
+
+El rediseño responsive, sus decisiones visuales y el checklist de accesibilidad están documentados en la [bitácora de rediseño de UI](./docs/rediseno-ui.md).
+
 ## Ubicación, lugares cercanos y rutas
 
-El botón **Ubicación actual** solicita permiso del navegador y centra el mapa en una ubicación aproximada con un radio visual de 3 km. La geolocalización requiere HTTPS (excepto en localhost). El sidebar muestra hasta tres lugares calificados del radio, ordenados por una media bayesiana que considera tanto el promedio como la cantidad de opiniones y respeta los filtros de tipo activos. Los lugares sin calificaciones no entran en el ranking.
+El botón **Ubicación actual** solicita permiso del navegador y centra el mapa en una ubicación aproximada con un radio visual de 3 km. Si se deniega el permiso, el dispositivo no puede determinar la posición o la consulta vence, el geoportal muestra un mensaje con la causa y sugerencias para volver a intentarlo o habilitar el permiso en los ajustes del navegador y del dispositivo.
+
+La geolocalización requiere un contexto seguro: abre el sitio con HTTPS (localhost también está permitido) y evita navegadores internos de aplicaciones, que pueden bloquear o limitar el permiso. Si el navegador pregunta, permite el acceso a la ubicación para este sitio.
+
+La alternativa manual **Elegir ubicación en el mapa** se contempla para los casos en que no se conceda el permiso. Actualmente no está disponible como control de ubicación: hacer clic en el mapa permite capturar coordenadas o seleccionar un lugar, pero no establece la ubicación del usuario ni sustituye el botón **Ubicación actual**.
+
+El sidebar muestra hasta tres lugares calificados del radio, ordenados por una media bayesiana que considera tanto el promedio como la cantidad de opiniones y respeta los filtros de tipo activos. Los lugares sin calificaciones no entran en el ranking.
 
 Para habilitar el ranking en Supabase, ejecuta [`sql/lugares_cercanos_mejor_calificados.sql`](./sql/lugares_cercanos_mejor_calificados.sql) después de crear `public.calificaciones_lugares` con el script anterior. El script agrega `training_spot_id`, intenta asociar opiniones históricas por nombre, tipo y cercanía de hasta 30 m y crea la RPC `listar_calificaciones_agregadas_lugares`. Solo se devuelven promedios y recuentos agregados; el filtrado geográfico y la distancia se calculan en el navegador, por lo que la ubicación del usuario no se envía a Supabase.
 
