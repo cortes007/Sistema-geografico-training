@@ -50,6 +50,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
     const view = map.getView();
     const currentZoom = view.getZoom();
     if (currentZoom === undefined) return;
+    view.cancelAnimations();
     view.animate({ zoom: currentZoom + delta, duration: 200 });
   };
 
@@ -91,13 +92,10 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           onClick={toggleBaseLayer}
           title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
           aria-label={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-cover bg-center pb-1.5 text-white shadow-[var(--shadow-card)] transition-transform hover:scale-105 max-md:h-11 max-md:w-11"
-          style={{
-            backgroundImage: 'url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/18/30)',
-          }}
+          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-[var(--color-brand-dark)] pb-1.5 text-[var(--color-brand-light)] shadow-[var(--shadow-card)] transition-transform hover:scale-105 max-md:h-11 max-md:w-11"
         >
-          <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/80 to-black/20 px-1 py-1 text-[10px] font-semibold drop-shadow">
-            <Layers className="h-3.5 w-3.5 max-md:h-5 max-md:w-5" />
+          <span className="absolute inset-0 flex items-center justify-center gap-1 bg-[var(--color-brand-dark)] px-1 py-1 text-[10px] font-semibold">
+            <Layers className="h-5 w-5 md:h-6 md:w-6" />
             <span className="max-md:hidden">Capas</span>
           </span>
         </button>

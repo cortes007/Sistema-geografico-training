@@ -8,6 +8,7 @@ import { fromLonLat } from 'ol/proj';
 import { Icon, Fill, Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
+import { centerOnFeature } from '../utils/gis/mapCentering';
 import { THEME_COLORS } from '../constants/themeColors';
 
 const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.brand}" opacity="0.28"><animate attributeName="r" values="8;21;8" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.55;0;0.55" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.white}" stroke="${THEME_COLORS.brand}" stroke-width="3"/></svg>`;
@@ -103,10 +104,6 @@ export function useLocationOverlay() {
     radiusSource.addFeature(radiusFeature);
     markerSource.addFeature(markerFeature);
 
-    map.getView().fit(radius.getExtent(), {
-      padding: [60, 60, 60, 60],
-      maxZoom: 15,
-      duration: 500,
-    });
+    centerOnFeature(map, radius.getExtent(), { targetType: 'extent' });
   }, [map, userLocation]);
 }

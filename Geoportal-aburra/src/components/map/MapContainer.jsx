@@ -10,7 +10,7 @@ import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import MapControls from './MapControls';
 import { useMapContext } from '../../context/useMapContext';
 
-export default function MapContainer({ isSidebarOpen, locationStatus, onRequestLocation }) {
+export default function MapContainer({ isSidebarOpen, locationStatus, locationError, onRequestLocation }) {
   const targetRef = useRef(null);
   const { map } = useMapContext();
   const [toast, setToast] = useState('');
@@ -69,6 +69,11 @@ export default function MapContainer({ isSidebarOpen, locationStatus, onRequestL
           locationStatus={locationStatus}
           onRequestLocation={onRequestLocation}
         />
+      )}
+      {locationError && (
+        <div role="alert" className="absolute left-3 right-3 top-16 z-30 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 px-3 py-2 text-xs text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm md:hidden">
+          {locationError}
+        </div>
       )}
       {(toast || trainingSpotsError) && (
         <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">

@@ -8,6 +8,7 @@ import { toLonLat } from 'ol/proj';
 import { useMapContext } from '../context/useMapContext';
 import { extractPlaceData } from '../utils/placeDetails';
 import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
+import { centerOnFeature } from '../utils/gis/mapCentering';
 import { THEME_COLORS } from '../constants/themeColors';
 
 const markerStyle = new Style({
@@ -137,6 +138,7 @@ export function useClickMarker() {
       markerFeature.setGeometry(new Point(geometry.getCoordinates()));
       markerFeature.set('isSelectionMarker', true);
       setSelectedPlace(place);
+      centerOnFeature(map, geometry.getCoordinates(), { willSelectPlace: true });
     };
 
     map.on('singleclick', handleClick);

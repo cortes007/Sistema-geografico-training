@@ -128,7 +128,7 @@ export default function AuthPanel({ mode, setMode }) {
             <LogOut className="h-4 w-4" />
           </button>
         </div>
-        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="absolute right-3 top-16 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-16 max-md:translate-x-0 max-md:flex">
+        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="absolute right-3 top-3 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-3 max-md:translate-x-0 max-md:flex">
           <LogOut className="h-5 w-5" />
         </button>
       </>
@@ -147,7 +147,7 @@ export default function AuthPanel({ mode, setMode }) {
           Registrarse
         </button>
       </div>
-      <button type="button" onClick={() => setMode('login')} aria-label="Iniciar sesión" title="Iniciar sesión" className="absolute right-3 top-16 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-16 max-md:translate-x-0 md:hidden">
+      <button type="button" onClick={() => setMode('login')} aria-label="Iniciar sesión" title="Iniciar sesión" className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-3 max-md:translate-x-0 md:hidden">
         <UserRound className="h-5 w-5" />
       </button>
       {mode && <AuthForm mode={mode} onClose={() => setMode(null)} onChangeMode={setMode} />}

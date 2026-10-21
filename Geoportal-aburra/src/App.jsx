@@ -241,11 +241,13 @@ function GeoportalContent() {
     <>
       <div
         className="relative h-dvh w-full overflow-hidden"
+        data-geoportal-layout
+        data-panel-open={isPanelOpen}
+        data-selected-place={Boolean(selectedPlace)}
+        data-selected-sheet-height-vh="60"
         style={{
           '--sheet-h': selectedPlace
-            ? isPanelOpen
-              ? '50dvh'
-              : '88dvh'
+            ? '60dvh'
             : isPanelOpen
               ? 'calc(148px + env(safe-area-inset-bottom))'
               : '88dvh',
@@ -255,6 +257,7 @@ function GeoportalContent() {
           <MapContainer
             isSidebarOpen={isPanelOpen}
             locationStatus={locationStatus}
+            locationError={locationError}
             onRequestLocation={requestLocation}
           />
         </main>
@@ -262,7 +265,7 @@ function GeoportalContent() {
         <div
           role="group"
           aria-label="Filtros por categoría"
-          className={`pointer-events-none fixed left-3 right-3 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
+          className={`pointer-events-none fixed left-3 right-16 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
         >
           <EquipmentTypeFilters className="flex md:flex" />
         </div>
@@ -270,18 +273,18 @@ function GeoportalContent() {
           id="geoportal-sidebar"
           className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'} max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:left-auto max-md:top-auto max-md:z-40 max-md:h-[var(--sheet-h)] max-md:max-h-none max-md:w-full max-md:translate-x-0 max-md:rounded-t-[20px] max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:p-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-12px_32px_rgba(0,0,0,0.28)] max-md:transition-[height] max-md:duration-[250ms] max-md:ease-out`}
         >
-          <div className="flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-5 max-md:pt-3 max-md:pb-4 md:flex-row">
+          <div className={`flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-5 ${selectedPlace || !isPanelOpen ? 'max-md:py-0' : 'max-md:pt-3 max-md:pb-4'} md:flex-row`}>
             <button
               type="button"
               onClick={() => setIsPanelOpen((open) => !open)}
               aria-label="Alternar altura del panel"
-              className="flex w-full flex-col items-stretch text-left max-md:gap-3 md:pointer-events-none md:cursor-default"
+              className={`flex w-full flex-col items-stretch text-left max-md:min-h-11 md:pointer-events-none md:cursor-default ${selectedPlace || !isPanelOpen ? 'max-md:gap-0 max-md:py-0' : 'max-md:gap-3'}`}
             >
-              <span className="hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block" />
-              <span className="truncate text-base font-semibold text-[var(--color-brand-light)]">
+              <span className={`hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block ${selectedPlace || !isPanelOpen ? 'max-md:mt-2' : ''}`} />
+              <span className={`truncate text-base font-semibold text-[var(--color-brand-light)] ${selectedPlace || !isPanelOpen ? 'max-md:py-2' : ''}`}>
                 Geoportal Deportivo Valle de Aburrá
               </span>
-              <span className="truncate text-sm text-[var(--color-text-secondary)] max-md:block md:text-xs">
+              <span className={`truncate text-sm text-[var(--color-text-secondary)] md:block md:text-xs ${selectedPlace || !isPanelOpen ? 'max-md:hidden' : 'max-md:block'}`}>
                 Lugares de entrenamiento, gimnasios y centros deportivos
               </span>
             </button>
