@@ -8,7 +8,7 @@ import { fromLonLat } from 'ol/proj';
 import { Icon, Fill, Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
-import { colorWithAlpha, THEME_COLORS } from '../constants/themeColors';
+import { THEME_COLORS } from '../constants/themeColors';
 
 const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.brand}" opacity="0.28"><animate attributeName="r" values="8;21;8" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.55;0;0.55" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="24" cy="24" r="8" fill="${THEME_COLORS.white}" stroke="${THEME_COLORS.brand}" stroke-width="3"/></svg>`;
 const locationStyle = new Style({
@@ -17,14 +17,40 @@ const locationStyle = new Style({
     anchor: [0.5, 0.5],
   }),
 });
-const radiusStyle = new Style({
-  fill: new Fill({ color: colorWithAlpha(THEME_COLORS.accent, 0.09) }),
-  stroke: new Stroke({
-    color: colorWithAlpha(THEME_COLORS.accent, 0.8),
-    width: 2,
-    lineDash: [8, 6],
-  }),
-});
+const radiusStyles = {
+  light: [
+    new Style({
+      stroke: new Stroke({ color: 'rgba(255, 255, 255, 0.9)', width: 5 }),
+    }),
+    new Style({
+      fill: new Fill({ color: 'rgba(124, 58, 237, 0.08)' }),
+      stroke: new Stroke({
+        color: 'rgba(124, 58, 237, 1)',
+        width: 2.5,
+        lineDash: [8, 6],
+      }),
+    }),
+  ],
+  satellite: [
+    new Style({
+      stroke: new Stroke({ color: 'rgba(255, 255, 255, 0.9)', width: 5 }),
+    }),
+    new Style({
+      fill: new Fill({ color: 'rgba(196, 181, 253, 0.14)' }),
+      stroke: new Stroke({
+        color: 'rgba(196, 181, 253, 1)',
+        width: 2.5,
+        lineDash: [8, 6],
+      }),
+    }),
+  ],
+};
+
+function isSatelliteVisible(map) {
+  return map.getLayers().getArray().some(
+    (layer) => layer.get('baseLayer') === 'satellite' && layer.getVisible()
+  );
+}
 
 export function useLocationOverlay() {
   const { map, userLocation } = useMapContext();
@@ -69,7 +95,9 @@ export function useLocationOverlay() {
     radius.transform('EPSG:4326', projection);
 
     const radiusFeature = new Feature(radius);
-    radiusFeature.setStyle(radiusStyle);
+    radiusFeature.setStyle(() => (
+      isSatelliteVisible(map) ? radiusStyles.satellite : radiusStyles.light
+    ));
     const markerFeature = new Feature(new Point(fromLonLat(center, projection)));
     markerFeature.setStyle(locationStyle);
     radiusSource.addFeature(radiusFeature);

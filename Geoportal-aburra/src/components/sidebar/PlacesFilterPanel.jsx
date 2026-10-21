@@ -1,66 +1,26 @@
-import { LoaderCircle, MapPin, Star } from 'lucide-react';
-import { EQUIPMENT_TYPES, EQUIPMENT_TYPE_STYLES } from '../../constants/equipmentTypes';
+import { Star } from 'lucide-react';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../../constants/location';
-import { useMapContext } from '../../context/useMapContext';
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces';
+import EquipmentTypeFilters from './EquipmentTypeFilters';
 
 function formatDistance(distanceMeters) {
   if (distanceMeters < 1000) return `${Math.round(distanceMeters)} m`;
   return `${(distanceMeters / 1000).toFixed(1)} km`;
 }
 
-export default function PlacesFilterPanel({ locationStatus, locationError, onRequestLocation }) {
-  const { activeEquipmentTypes, toggleEquipmentType } = useMapContext();
+export default function PlacesFilterPanel({ locationStatus, locationError }) {
   const { places, loading, error, selectPlace } = useNearbyPlaces();
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="border-y border-[var(--color-bg-elevated)] py-3">
+      <div className="overflow-hidden py-2 md:hidden">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
           Filtrar lugares
         </h2>
-        <div className="flex flex-wrap gap-2">
-          {Object.values(EQUIPMENT_TYPES).map((type) => (
-            <label
-              key={type}
-              className={`flex cursor-pointer items-center gap-2 rounded-full border px-2.5 py-1 text-xs transition-all duration-200 ${
-                activeEquipmentTypes[type]
-                  ? 'text-[var(--color-text-primary)]'
-                  : 'border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'
-              }`}
-              style={activeEquipmentTypes[type] ? {
-                borderColor: EQUIPMENT_TYPE_STYLES[type].color,
-                backgroundColor: `${EQUIPMENT_TYPE_STYLES[type].color}20`,
-              } : undefined}
-            >
-              <input
-                type="checkbox"
-                checked={activeEquipmentTypes[type]}
-                onChange={() => toggleEquipmentType(type)}
-                className="h-4 w-4 rounded border-[var(--color-bg-elevated)]"
-                style={{ accentColor: EQUIPMENT_TYPE_STYLES[type].color }}
-              />
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: EQUIPMENT_TYPE_STYLES[type].color }}
-              />
-              {EQUIPMENT_TYPE_STYLES[type].label}
-            </label>
-          ))}
+        <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <EquipmentTypeFilters />
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={onRequestLocation}
-        disabled={locationStatus === 'loading'}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-3 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-elevated)] disabled:cursor-wait disabled:opacity-60"
-      >
-        {locationStatus === 'loading'
-          ? <LoaderCircle className="h-4 w-4 animate-spin" />
-          : <MapPin className="h-4 w-4" />}
-        {locationStatus === 'loading' ? 'Consultando ubicación...' : 'Ubicación actual'}
-      </button>
 
       {locationError && <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{locationError}</p>}
       {locationStatus === 'ready' && (

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Compass, Layers, Minus, Plus } from 'lucide-react';
+import { Compass, Layers, LocateFixed, LoaderCircle, Minus, Plus } from 'lucide-react';
 import { useMapContext } from '../../context/useMapContext';
 
-export default function MapControls() {
+const buttonClassName = 'flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] disabled:cursor-wait disabled:opacity-60';
+
+export default function MapControls({ isSidebarOpen, locationStatus, onRequestLocation }) {
   const { map } = useMapContext();
   const compassRef = useRef(null);
   const draggingCompassRef = useRef(false);
@@ -31,6 +33,12 @@ export default function MapControls() {
     satellite.setVisible(nextSatellite);
     streets.setVisible(!nextSatellite);
     setIsSatellite(nextSatellite);
+    map.getLayers().getArray()
+      .filter((layer) => layer.get('locationRadiusLayer') || layer.get('routeLayer'))
+      .forEach((layer) => {
+        layer.getSource().getFeatures().forEach((feature) => feature.changed());
+        layer.changed();
+      });
   };
 
   const resetNorth = (event) => {
@@ -76,48 +84,71 @@ export default function MapControls() {
   };
 
   return (
-    <div className="absolute right-4 top-24 z-20 flex flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/90 shadow-lg backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={() => changeZoom(1)}
-        title="Acercar mapa"
-        aria-label="Acercar mapa"
-        className="flex h-11 w-11 items-center justify-center text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
-      >
-        <Plus className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => changeZoom(-1)}
-        title="Alejar mapa"
-        aria-label="Alejar mapa"
-        className="flex h-11 w-11 items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
-      >
-        <Minus className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={toggleBaseLayer}
-        title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-        className="flex h-11 w-11 items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
-      >
-        <Layers className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        ref={compassRef}
-        onPointerDown={startCompassDrag}
-        onPointerMove={dragCompass}
-        onPointerUp={endCompassDrag}
-        onClick={(event) => {
-          if (!draggingCompassRef.current) resetNorth(event);
-        }}
-        title="Orientar mapa al norte"
-        aria-label="Orientar mapa al norte"
-        className="flex h-11 w-11 touch-none items-center justify-center border-t border-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
-      >
-        <Compass className="h-5 w-5 transition-transform" style={{ transform: `rotate(${rotation}rad)` }} />
-      </button>
-    </div>
+    <>
+      <div className="absolute bottom-4 left-4 z-20" data-sidebar-open={isSidebarOpen}>
+        <button
+          type="button"
+          onClick={toggleBaseLayer}
+          title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
+          aria-label={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
+          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-cover bg-center pb-1.5 text-white shadow-[var(--shadow-card)] transition-transform hover:scale-105"
+          style={{
+            backgroundImage: 'url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/18/30)',
+          }}
+        >
+          <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/80 to-black/20 px-1 py-1 text-[10px] font-semibold drop-shadow">
+            <Layers className="h-3.5 w-3.5" />
+            Capas
+          </span>
+        </button>
+      </div>
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={onRequestLocation}
+          disabled={locationStatus === 'loading'}
+          title="Ubicación actual"
+          aria-label={locationStatus === 'loading' ? 'Consultando ubicación' : 'Ubicación actual'}
+          className={buttonClassName}
+        >
+          {locationStatus === 'loading'
+            ? <LoaderCircle className="h-5 w-5 animate-spin" />
+            : <LocateFixed className="h-5 w-5" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => changeZoom(1)}
+          title="Acercar mapa"
+          aria-label="Acercar mapa"
+          className={buttonClassName}
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => changeZoom(-1)}
+          title="Alejar mapa"
+          aria-label="Alejar mapa"
+          className={buttonClassName}
+        >
+          <Minus className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          ref={compassRef}
+          onPointerDown={startCompassDrag}
+          onPointerMove={dragCompass}
+          onPointerUp={endCompassDrag}
+          onClick={(event) => {
+            if (!draggingCompassRef.current) resetNorth(event);
+          }}
+          title="Orientar mapa al norte"
+          aria-label="Orientar mapa al norte"
+          className={`${buttonClassName} touch-none`}
+        >
+          <Compass className="h-5 w-5 transition-transform" style={{ transform: `rotate(${rotation}rad)` }} />
+        </button>
+      </div>
+    </>
   );
 }

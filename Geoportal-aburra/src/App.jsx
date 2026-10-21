@@ -4,6 +4,7 @@ import { useMapContext } from './context/useMapContext';
 import { MapProvider } from './context/MapContext.jsx';
 import MapContainer from './components/map/MapContainer';
 import PlacesFilterPanel from './components/sidebar/PlacesFilterPanel';
+import EquipmentTypeFilters from './components/sidebar/EquipmentTypeFilters';
 import AuthPanel from './components/auth/AuthPanel';
 import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 import MeetupsPanel from './components/meetups/MeetupsPanel';
@@ -240,14 +241,25 @@ function GeoportalContent() {
     <>
       <div className="relative h-dvh w-full overflow-hidden">
         <main className="relative h-full min-h-0 min-w-0">
-          <MapContainer />
+          <MapContainer
+            isSidebarOpen={isPanelOpen}
+            locationStatus={locationStatus}
+            onRequestLocation={requestLocation}
+          />
         </main>
-        <AuthPanel mode={authMode} setMode={setAuthMode} isSidebarOpen={isPanelOpen} />
+        <AuthPanel mode={authMode} setMode={setAuthMode} />
+        <div
+          role="group"
+          aria-label="Filtros por categoría"
+          className={`pointer-events-none absolute flex justify-center transition-[left] duration-200 ${isPanelOpen ? 'left-[calc(var(--sidebar-width)+2.75rem)]' : 'left-4'} right-4 top-20 z-30 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[1280px]:right-[19rem] min-[1280px]:top-4`}
+        >
+          <EquipmentTypeFilters className="hidden md:flex" />
+        </div>
         <aside
           id="geoportal-sidebar"
-          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100%-2rem)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-y-auto rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-3 text-[13px] shadow-2xl backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
+          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
         >
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex shrink-0 items-start justify-between gap-3">
             <div>
               <h1 className="text-base font-semibold text-[var(--color-brand-light)]">Geoportal Deportivo Valle de Aburrá</h1>
               <p className="text-xs text-[var(--color-text-secondary)]">Lugares de entrenamiento, gimnasios y centros deportivos</p>
@@ -256,25 +268,24 @@ function GeoportalContent() {
               <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
-          <div className="mt-3 shrink-0">
+          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
             <PlacesFilterPanel
               locationStatus={locationStatus}
               locationError={locationError}
-              onRequestLocation={requestLocation}
             />
+            {selectedPlace ? (
+              <div ref={selectedDetailsRef} className="mt-3 shrink-0 scroll-mt-3">
+                <PlaceDetailsCard
+                  onBack={clearSelectedPlace}
+                  onRequestAuth={() => setAuthMode('login')}
+                  onGetDirections={handleGetDirections}
+                  directionsLoading={directionsLoading}
+                  directionsError={directionsError}
+                  route={route?.destinationKey === selectedPlaceKey ? route : null}
+                />
+              </div>
+            ) : null}
           </div>
-          {selectedPlace ? (
-            <div ref={selectedDetailsRef} className="mt-3 shrink-0 scroll-mt-3">
-              <PlaceDetailsCard
-                onBack={clearSelectedPlace}
-                onRequestAuth={() => setAuthMode('login')}
-                onGetDirections={handleGetDirections}
-                directionsLoading={directionsLoading}
-                directionsError={directionsError}
-                route={route?.destinationKey === selectedPlaceKey ? route : null}
-              />
-            </div>
-          ) : null}
         </aside>
         {!isPanelOpen && (
           <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-[var(--color-bg-elevated)]">

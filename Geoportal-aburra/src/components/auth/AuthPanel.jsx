@@ -113,11 +113,9 @@ function AuthForm({ mode, onClose, onChangeMode }) {
   );
 }
 
-export default function AuthPanel({ mode, setMode, isSidebarOpen }) {
+export default function AuthPanel({ mode, setMode }) {
   const { user, loading, signOut } = useAuth();
-  const position = isSidebarOpen
-    ? 'bottom-4 right-4 top-auto md:bottom-auto md:top-4'
-    : 'right-4 top-4';
+  const position = 'right-4 top-4';
 
   if (loading) return null;
 

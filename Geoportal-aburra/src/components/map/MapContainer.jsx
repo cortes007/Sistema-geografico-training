@@ -10,7 +10,7 @@ import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import MapControls from './MapControls';
 import { useMapContext } from '../../context/useMapContext';
 
-export default function MapContainer() {
+export default function MapContainer({ isSidebarOpen, locationStatus, onRequestLocation }) {
   const targetRef = useRef(null);
   const { map } = useMapContext();
   const [toast, setToast] = useState('');
@@ -40,6 +40,12 @@ export default function MapContainer() {
     const handleTileError = () => {
       satelliteLayer.setVisible(false);
       streetsLayer.setVisible(true);
+      map.getLayers().getArray()
+        .filter((layer) => layer.get('locationRadiusLayer') || layer.get('routeLayer'))
+        .forEach((layer) => {
+          layer.getSource().getFeatures().forEach((feature) => feature.changed());
+          layer.changed();
+        });
       setToast('Vista satelital no disponible, volviendo a calles');
       window.setTimeout(() => setToast(''), 3500);
     };
@@ -57,7 +63,13 @@ export default function MapContainer() {
   return (
     <div className="relative h-full w-full">
       <div ref={targetRef} className="h-full w-full" />
-      {map && <MapControls />}
+      {map && (
+        <MapControls
+          isSidebarOpen={isSidebarOpen}
+          locationStatus={locationStatus}
+          onRequestLocation={onRequestLocation}
+        />
+      )}
       {(toast || trainingSpotsError) && (
         <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">
           {toast || trainingSpotsError}

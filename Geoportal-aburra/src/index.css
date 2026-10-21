@@ -11,6 +11,7 @@
   --color-cat-center: #DB2777;
   --color-star: #FBBF24;
   --color-white: #FFFFFF;
+  --sidebar-width: clamp(380px, 28vw, 480px);
 
   --color-bg-primary: var(--color-brand-dark);
   --color-bg-secondary: #1D3B28;
