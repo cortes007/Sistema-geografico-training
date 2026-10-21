@@ -47,16 +47,16 @@ function EventForm({ spotId, initialValues = emptyForm, onSaved, onCancel, event
         <label key={name} className="block text-xs font-semibold text-[var(--color-text-primary)]">
           {name === 'titulo' ? 'Título' : name === 'descripcion' ? 'Descripción' : name === 'fechaHoraInicio' ? 'Inicio' : 'Fin'}
           {name === 'descripcion' ? (
-            <textarea name={name} value={form[name]} onChange={update} rows={2} className="mt-1 w-full rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-2 py-1.5 font-normal text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)]" />
+            <textarea name={name} value={form[name]} onChange={update} rows={2} className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] px-2 py-1.5 font-normal text-[var(--color-text-primary)] transition-all duration-200 motion-reduce:transition-none focus:border-[var(--color-accent-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]" />
           ) : (
-            <input name={name} type={name.startsWith('fecha') ? 'datetime-local' : 'text'} required={name !== 'descripcion' && name !== 'fechaHoraFin'} value={form[name]} onChange={update} className="mt-1 w-full rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-2 py-1.5 font-normal text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)]" />
+            <input name={name} type={name.startsWith('fecha') ? 'datetime-local' : 'text'} required={name !== 'descripcion' && name !== 'fechaHoraFin'} value={form[name]} onChange={update} className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] px-2 py-1.5 font-normal text-[var(--color-text-primary)] transition-all duration-200 motion-reduce:transition-none focus:border-[var(--color-accent-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]" />
           )}
         </label>
       ))}
       {error && <p role="alert" className="rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={saving} className="rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)] disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
-        <button type="button" onClick={onCancel} className="rounded-lg bg-[var(--color-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-secondary)]">Cancelar</button>
+        <button type="submit" disabled={saving} className="min-h-11 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-brand-light)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">{saving ? 'Guardando...' : 'Guardar'}</button>
+        <button type="button" onClick={onCancel} className="min-h-11 rounded-lg bg-[var(--color-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">Cancelar</button>
       </div>
     </form>
   );
@@ -112,11 +112,11 @@ function EventCard({ event, user, onChange }) {
       </div>
       {event.descripcion && <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.descripcion}</p>}
       <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.asistentesConfirmados} asistentes</p>
-      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-accent-primary)] disabled:opacity-60">{registered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
+      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 min-h-11 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-accent-primary)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">{registered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
       {isOrganizer && (
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={() => setEditing((value) => !value)} className="text-xs font-semibold text-[var(--color-accent-primary)] hover:text-[var(--color-accent-secondary)]">Editar</button>
-          <button type="button" onClick={remove} className="text-xs font-semibold text-[var(--color-accent-danger)] hover:text-red-400">Eliminar</button>
+          <button type="button" onClick={() => setEditing((value) => !value)} className="min-h-11 px-2 text-xs font-semibold text-[var(--color-accent-primary)] hover:text-[var(--color-accent-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">Editar</button>
+          <button type="button" onClick={remove} className="min-h-11 px-2 text-xs font-semibold text-[var(--color-accent-danger)] hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">Eliminar</button>
         </div>
       )}
       {editing && <EventForm eventId={event.id} initialValues={{ titulo: event.titulo, descripcion: event.descripcion || '', fechaHoraInicio: event.fechaHoraInicio.slice(0, 16), fechaHoraFin: event.fechaHoraFin?.slice(0, 16) || '' }} onSaved={() => { setEditing(false); onChange(); }} onCancel={() => setEditing(false)} />}
@@ -152,12 +152,12 @@ export default function MeetupsPanel({ spotId }) {
     <section className="mt-4 border-t border-[var(--color-bg-elevated)] pt-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-[var(--color-text-primary)]">Quedadas próximas</h3>
-        {user && <button type="button" onClick={() => setCreating((value) => !value)} className="rounded-lg bg-[var(--color-accent-primary)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)]">Crear quedada aquí</button>}
+        {user && <button type="button" onClick={() => setCreating((value) => !value)} className="min-h-11 rounded-lg bg-[var(--color-accent-primary)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-brand-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">Crear quedada aquí</button>}
       </div>
       {creating && <EventForm spotId={spotId} onSaved={() => { setCreating(false); load(); }} onCancel={() => setCreating(false)} />}
-      {loading && <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando quedadas...</p>}
+      {loading && <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando quedadas...</p>}
       {error && <p role="alert" className="mt-3 rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
-      {!loading && !error && events.length === 0 && <p className="mt-3 text-xs text-[var(--color-text-secondary)]">No hay quedadas próximas en este lugar.</p>}
+      {!loading && !error && events.length === 0 && <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">No hay quedadas próximas en este lugar.</p>}
       <div className="mt-3 space-y-2">{events.map((event) => <EventCard key={event.id} event={event} user={user} onChange={load} />)}</div>
     </section>
   );

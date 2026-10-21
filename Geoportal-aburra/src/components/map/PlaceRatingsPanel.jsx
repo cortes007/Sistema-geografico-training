@@ -18,9 +18,10 @@ function Stars({ value, interactive = false, onSelect }) {
           onClick={interactive ? () => onSelect(star) : undefined}
           aria-label={interactive ? `Calificar con ${star} ${star === 1 ? 'estrella' : 'estrellas'}` : undefined}
           aria-pressed={interactive ? value === star : undefined}
-          className={interactive ? 'rounded p-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-warning)]' : 'cursor-default p-0.5'}
+          className={interactive ? 'min-h-11 min-w-11 rounded p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]' : 'cursor-default p-0.5'}
         >
           <Star
+            aria-hidden="true"
             className={`h-5 w-5 ${star <= value ? 'fill-[var(--color-accent-warning)] text-[var(--color-accent-warning)]' : 'text-[var(--color-bg-elevated)]'}`}
           />
         </button>
@@ -143,14 +144,14 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
               maxLength={1000}
               rows={3}
               placeholder="Comparte tu experiencia en este lugar"
-              className="mt-1 w-full resize-y rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-2.5 py-2 font-normal text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-warning)] focus:ring-2 focus:ring-[var(--color-accent-warning)]/20"
+              className="mt-1 min-h-11 w-full resize-y rounded-lg border border-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] px-2.5 py-2 font-normal text-[var(--color-text-primary)] transition-all duration-200 motion-reduce:transition-none focus:border-[var(--color-accent-warning)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
             />
             <span className="mt-1 block text-right font-normal text-[var(--color-text-secondary)]">{comment.length}/1000</span>
           </label>
           <button
             type="submit"
             disabled={saving || loading || rating === 0}
-            className="rounded-lg bg-[var(--color-accent-warning)] px-3 py-2 text-xs font-semibold text-[var(--color-bg-primary)] transition-all duration-200 hover:bg-[var(--color-accent-secondary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 rounded-lg bg-[var(--color-accent-warning)] px-3 py-2 text-xs font-semibold text-[var(--color-bg-primary)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-accent-secondary)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
           >
             {saving ? 'Guardando...' : reviews.some((review) => review.usuario_id === user.id) ? 'Actualizar opinión' : 'Publicar opinión'}
           </button>
@@ -161,7 +162,7 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
           <button
             type="button"
             onClick={onRequestAuth}
-            className="mt-2 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 hover:bg-[var(--color-brand-light)]"
+            className="mt-2 min-h-11 rounded-lg bg-[var(--color-accent-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-brand-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
           >
             Iniciar sesión
           </button>
@@ -170,9 +171,9 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
 
       {success && <p role="status" className="mt-2 text-xs text-[var(--color-accent-success)]">{success}</p>}
       {error && <p role="alert" className="mt-2 rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
-      {loading && <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando opiniones...</p>}
+      {loading && <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando opiniones...</p>}
       {!loading && !error && reviews.length === 0 && (
-        <p className="mt-3 text-xs text-[var(--color-text-secondary)]">Este lugar aún no tiene opiniones.</p>
+        <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">Este lugar aún no tiene opiniones.</p>
       )}
       {!loading && reviews.length > 0 && (
         <div className="mt-3 space-y-2">

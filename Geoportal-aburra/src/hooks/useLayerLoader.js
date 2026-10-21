@@ -12,6 +12,7 @@ import JSZip from 'jszip';
 import { useMapContext } from '../context/useMapContext';
 import { getEquipmentTypeFromProperties, EQUIPMENT_TYPE_STYLES } from '../constants/equipmentTypes';
 import { THEME_COLORS } from '../constants/themeColors';
+import { getAnimationDuration } from '../utils/gis/mapCentering';
 import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 import { parsePrj, detectGeojsonCrs } from '../utils/gis/prjParser';
 import { reprojectGeoJSON } from '../utils/gis/reproject';
@@ -105,7 +106,7 @@ export function useLayerLoader() {
 
       const extent = source.getExtent();
       if (extent && extent.every(Number.isFinite)) {
-        map.getView().fit(extent, { padding: [40, 40, 40, 40], maxZoom: 17, duration: 400 });
+        map.getView().fit(extent, { padding: [40, 40, 40, 40], maxZoom: 17, duration: getAnimationDuration(400) });
       }
 
       addLayer({

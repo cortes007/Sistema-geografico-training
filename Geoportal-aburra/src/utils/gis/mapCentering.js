@@ -3,6 +3,10 @@ import { easeOut } from 'ol/easing';
 
 const activeCenterAnimations = new WeakMap();
 
+export function getAnimationDuration(durationMs) {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : durationMs;
+}
+
 function getCenterPadding(willSelectPlace) {
   const layout = document.querySelector('[data-geoportal-layout]');
   const sidebar = document.getElementById('geoportal-sidebar');
@@ -34,7 +38,7 @@ export function centerOnFeature(map, coordinateOrExtent, { targetType = 'point',
     view.cancelAnimations();
   }
 
-  const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 700;
+  const duration = getAnimationDuration(700);
   const padding = getCenterPadding(willSelectPlace);
   const target = targetType === 'extent' ? coordinateOrExtent : new Point(coordinateOrExtent);
   let active = true;

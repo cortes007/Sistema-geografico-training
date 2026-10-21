@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { EQUIPMENT_TYPES } from '../constants/equipmentTypes';
+import { getAnimationDuration } from '../utils/gis/mapCentering';
 import { MapContext } from './mapContext';
 
 export function MapProvider({ children }) {
@@ -55,7 +56,7 @@ export function MapProvider({ children }) {
       map.getView().fit(remainingExtent, {
         padding: [40, 40, 40, 40],
         maxZoom: 17,
-        duration: 400,
+        duration: getAnimationDuration(400),
       });
     }
   }, [layers, map, selectedPlace]);

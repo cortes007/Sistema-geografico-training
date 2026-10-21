@@ -76,7 +76,7 @@ export default function MapContainer({ isSidebarOpen, locationStatus, locationEr
         </div>
       )}
       {(toast || trainingSpotsError) && (
-        <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">
+        <div role={trainingSpotsError ? 'alert' : 'status'} aria-live={trainingSpotsError ? 'assertive' : 'polite'} className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] px-4 py-2 text-sm text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm">
           {toast || trainingSpotsError}
         </div>
       )}

@@ -60,13 +60,14 @@ function PlaceDetailsCard({
         type="button"
         onClick={onBack}
         aria-label="Cerrar detalle del lugar"
-        className="absolute right-3 top-3 z-10 rounded-full bg-[var(--color-bg-secondary)]/90 p-1.5 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]"
+        title="Cerrar detalle del lugar"
+        className="absolute right-3 top-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--color-bg-secondary)]/90 p-1.5 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm transition-colors motion-reduce:transition-none hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
       </button>
 
       {loading ? (
-        <div className="h-52 animate-pulse bg-[var(--color-bg-secondary)]" aria-label="Cargando foto" />
+        <div role="status" aria-live="polite" className="h-52 animate-pulse motion-reduce:animate-none bg-[var(--color-bg-secondary)]" aria-label="Cargando foto" />
       ) : photo ? (
         <div>
           {!photo.exact && (
@@ -74,7 +75,11 @@ function PlaceDetailsCard({
           )}
           <img
             src={photo.thumbUrl || photo.url}
-            alt={selectedPlace.name}
+            alt={photo.isPlaceholder
+              ? ''
+              : photo.exact
+                ? `Foto de ${selectedPlace.name}`
+                : `Foto cercana a ${selectedPlace.name}`}
             onError={() => setPhotoState({ loading: false, photo: null })}
             loading="eager"
             fetchPriority="high"
@@ -87,9 +92,9 @@ function PlaceDetailsCard({
           </p>
         </div>
       ) : (
-        <div className="flex h-52 flex-col items-center justify-center gap-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">
+        <div role="status" aria-live="polite" className="flex h-52 flex-col items-center justify-center gap-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-bg-elevated)] shadow-sm">
-            <MapPin className="h-6 w-6" />
+            <MapPin aria-hidden="true" className="h-6 w-6" />
           </div>
           <span className="text-sm">Sin fotos disponibles</span>
         </div>
@@ -98,7 +103,7 @@ function PlaceDetailsCard({
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-primary)] text-white shadow-lg">
-            <MapPin className="h-5 w-5" />
+            <MapPin aria-hidden="true" className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold text-[var(--color-brand-light)]">{selectedPlace.name}</h2>
@@ -122,11 +127,11 @@ function PlaceDetailsCard({
           type="button"
           onClick={onGetDirections}
           disabled={directionsLoading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:brightness-110 disabled:cursor-wait disabled:opacity-60 max-md:min-h-11"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors motion-reduce:transition-none hover:brightness-110 disabled:cursor-wait disabled:opacity-60 max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
         >
           {directionsLoading
-            ? <LoaderCircle className="h-4 w-4 animate-spin" />
-            : <Route className="h-4 w-4" />}
+            ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+            : <Route aria-hidden="true" className="h-4 w-4" />}
           {directionsLoading
             ? 'Calculando ruta...'
             : route ? 'Quitar ruta' : 'Cómo llegar'}
@@ -135,11 +140,11 @@ function PlaceDetailsCard({
           href={googleMapsUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors hover:bg-[var(--color-brand)]/10 max-md:min-h-11"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-brand)]/10 max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
         >
-          <Navigation className="h-4 w-4" />
+          <Navigation aria-hidden="true" className="h-4 w-4" />
           Abrir en Google Maps
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink aria-hidden="true" className="h-4 w-4" />
         </a>
         {route && (
           <p role="status" className="text-xs text-[var(--color-text-secondary)]">
@@ -264,21 +269,24 @@ function GeoportalContent() {
         <AuthPanel mode={authMode} setMode={setAuthMode} />
         <div
           role="group"
-          aria-label="Filtros por categoría"
-          className={`pointer-events-none fixed left-3 right-16 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
+          aria-label="Filtrar lugares por tipo"
+          className={`pointer-events-none fixed left-3 right-16 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 motion-reduce:transition-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
         >
           <EquipmentTypeFilters className="flex md:flex" />
         </div>
         <aside
           id="geoportal-sidebar"
-          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'} max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:left-auto max-md:top-auto max-md:z-40 max-md:h-[var(--sheet-h)] max-md:max-h-none max-md:w-full max-md:translate-x-0 max-md:rounded-t-[20px] max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:p-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-12px_32px_rgba(0,0,0,0.28)] max-md:transition-[height] max-md:duration-[250ms] max-md:ease-out`}
+          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 motion-reduce:transition-none ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'} max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:left-auto max-md:top-auto max-md:z-40 max-md:h-[var(--sheet-h)] max-md:max-h-none max-md:w-full max-md:translate-x-0 max-md:rounded-t-[20px] max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:p-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-12px_32px_rgba(0,0,0,0.28)] max-md:transition-[height] max-md:duration-[250ms] max-md:ease-out max-md:motion-reduce:transition-none`}
         >
           <div className={`flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-5 ${selectedPlace || !isPanelOpen ? 'max-md:py-0' : 'max-md:pt-3 max-md:pb-4'} md:flex-row`}>
             <button
               type="button"
               onClick={() => setIsPanelOpen((open) => !open)}
               aria-label="Alternar altura del panel"
-              className={`flex w-full flex-col items-stretch text-left max-md:min-h-11 md:pointer-events-none md:cursor-default ${selectedPlace || !isPanelOpen ? 'max-md:gap-0 max-md:py-0' : 'max-md:gap-3'}`}
+              title="Alternar altura del panel"
+              aria-expanded={isPanelOpen}
+              aria-controls="geoportal-sidebar"
+              className={`flex w-full flex-col items-stretch text-left max-md:min-h-11 md:pointer-events-none md:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] ${selectedPlace || !isPanelOpen ? 'max-md:gap-0 max-md:py-0' : 'max-md:gap-3'}`}
             >
               <span className={`hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block ${selectedPlace || !isPanelOpen ? 'max-md:mt-2' : ''}`} />
               <span className={`truncate text-base font-semibold text-[var(--color-brand-light)] ${selectedPlace || !isPanelOpen ? 'max-md:py-2' : ''}`}>
@@ -288,8 +296,8 @@ function GeoportalContent() {
                 Lugares de entrenamiento, gimnasios y centros deportivos
               </span>
             </button>
-            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="hidden rounded p-1 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] md:block">
-              <PanelLeftClose className="h-4 w-4" />
+            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" title="Colapsar panel" aria-expanded={isPanelOpen} aria-controls="geoportal-sidebar" className="hidden min-h-11 min-w-11 rounded p-1 text-[var(--color-text-secondary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] md:block">
+              <PanelLeftClose aria-hidden="true" className="h-4 w-4" />
             </button>
           </div>
           <div className={`mt-4 min-h-0 flex-1 overflow-y-auto pr-1 max-md:mt-0 max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] ${selectedPlace || !isPanelOpen ? 'max-md:block' : 'max-md:hidden'} md:pb-0`}>
@@ -312,8 +320,8 @@ function GeoportalContent() {
           </div>
         </aside>
         {!isPanelOpen && (
-          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-[var(--color-bg-elevated)] max-md:hidden">
-            <PanelLeftOpen className="h-5 w-5" />
+          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" title="Expandir panel" aria-expanded={isPanelOpen} aria-controls="geoportal-sidebar" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:hidden">
+            <PanelLeftOpen aria-hidden="true" className="h-5 w-5" />
           </button>
         )}
       </div>

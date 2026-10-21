@@ -9,7 +9,8 @@ export default function CRSPanel() {
     <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/80 p-3 shadow-lg backdrop-blur-sm">
       <label className="text-xs font-medium text-[var(--color-text-secondary)]">Sistema de referencia para coordenadas</label>
       <select
-        className="w-full rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none transition-all duration-200 focus:border-[var(--color-accent-primary)]"
+        aria-label="Sistema de referencia para coordenadas"
+        className="min-h-11 w-full rounded-lg border border-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-primary)] transition-all duration-200 motion-reduce:transition-none focus:border-[var(--color-accent-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
         value={activeCRS}
         onChange={(e) => setActiveCRS(e.target.value)}
       >

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Compass, Layers, LocateFixed, LoaderCircle, Minus, Plus } from 'lucide-react';
 import { useMapContext } from '../../context/useMapContext';
+import { getAnimationDuration } from '../../utils/gis/mapCentering';
 
-const buttonClassName = 'flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] disabled:cursor-wait disabled:opacity-60';
+const buttonClassName = 'flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors motion-reduce:transition-none hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]';
 
 export default function MapControls({ isSidebarOpen, locationStatus, onRequestLocation }) {
   const { map } = useMapContext();
@@ -43,7 +44,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
 
   const resetNorth = (event) => {
     event?.stopPropagation();
-    map.getView().animate({ rotation: 0, duration: 250 });
+    map.getView().animate({ rotation: 0, duration: getAnimationDuration(250) });
   };
 
   const changeZoom = (delta) => {
@@ -51,7 +52,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
     const currentZoom = view.getZoom();
     if (currentZoom === undefined) return;
     view.cancelAnimations();
-    view.animate({ zoom: currentZoom + delta, duration: 200 });
+    view.animate({ zoom: currentZoom + delta, duration: getAnimationDuration(200) });
   };
 
   const getPointerAngle = (event) => {
@@ -86,32 +87,32 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
 
   return (
     <>
-      <div className="absolute bottom-4 left-4 z-20 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:left-3 max-md:transition-[bottom] max-md:duration-200" data-sidebar-open={isSidebarOpen}>
+      <div className="absolute bottom-4 left-4 z-20 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:left-3 max-md:transition-[bottom] max-md:duration-200 max-md:motion-reduce:transition-none" data-sidebar-open={isSidebarOpen}>
         <button
           type="button"
           onClick={toggleBaseLayer}
           title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
           aria-label={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-[var(--color-brand-dark)] pb-1.5 text-[var(--color-brand-light)] shadow-[var(--shadow-card)] transition-transform hover:scale-105 max-md:h-11 max-md:w-11"
+          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-[var(--color-brand-dark)] pb-1.5 text-[var(--color-brand-light)] shadow-[var(--shadow-card)] transition-transform motion-reduce:transition-none hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:h-11 max-md:w-11"
         >
           <span className="absolute inset-0 flex items-center justify-center gap-1 bg-[var(--color-brand-dark)] px-1 py-1 text-[10px] font-semibold">
-            <Layers className="h-5 w-5 md:h-6 md:w-6" />
+            <Layers aria-hidden="true" className="h-5 w-5 md:h-6 md:w-6" />
             <span className="max-md:hidden">Capas</span>
           </span>
         </button>
       </div>
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-3 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:right-3 max-md:transition-[bottom] max-md:duration-200">
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-3 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:right-3 max-md:transition-[bottom] max-md:duration-200 max-md:motion-reduce:transition-none">
         <button
           type="button"
           onClick={onRequestLocation}
           disabled={locationStatus === 'loading'}
-          title="Ubicación actual"
+          title={locationStatus === 'loading' ? 'Consultando ubicación' : 'Ubicación actual'}
           aria-label={locationStatus === 'loading' ? 'Consultando ubicación' : 'Ubicación actual'}
           className={buttonClassName}
         >
           {locationStatus === 'loading'
-            ? <LoaderCircle className="h-5 w-5 animate-spin" />
-            : <LocateFixed className="h-5 w-5" />}
+            ? <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin motion-reduce:animate-none" />
+            : <LocateFixed aria-hidden="true" className="h-5 w-5" />}
         </button>
         <button
           type="button"
@@ -120,7 +121,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           aria-label="Acercar mapa"
           className={`${buttonClassName} max-md:hidden`}
         >
-          <Plus className="h-5 w-5" />
+          <Plus aria-hidden="true" className="h-5 w-5" />
         </button>
         <button
           type="button"
@@ -129,7 +130,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           aria-label="Alejar mapa"
           className={`${buttonClassName} max-md:hidden`}
         >
-          <Minus className="h-5 w-5" />
+          <Minus aria-hidden="true" className="h-5 w-5" />
         </button>
         <button
           type="button"
@@ -144,7 +145,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           aria-label="Orientar mapa al norte"
           className={`${buttonClassName} touch-none`}
         >
-          <Compass className="h-5 w-5 transition-transform" style={{ transform: `rotate(${rotation}rad)` }} />
+          <Compass aria-hidden="true" className="h-5 w-5 transition-transform motion-reduce:transition-none" style={{ transform: `rotate(${rotation}rad)` }} />
         </button>
       </div>
     </>

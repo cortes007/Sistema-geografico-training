@@ -6,6 +6,7 @@ import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
 import { Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
+import { getAnimationDuration } from '../utils/gis/mapCentering';
 
 const routeStyles = {
   light: [
@@ -88,7 +89,7 @@ export function useRouteOverlay() {
     map.getView().fit(geometry.getExtent(), {
       padding: [70, 70, 70, 70],
       maxZoom: 17,
-      duration: 500,
+      duration: getAnimationDuration(500),
     });
   }, [map, route]);
 }
