@@ -1,7 +1,6 @@
 import { Star } from 'lucide-react';
 import { NEARBY_SEARCH_RADIUS_METERS } from '../../constants/location';
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces';
-import EquipmentTypeFilters from './EquipmentTypeFilters';
 
 function formatDistance(distanceMeters) {
   if (distanceMeters < 1000) return `${Math.round(distanceMeters)} m`;
@@ -13,15 +12,6 @@ export default function PlacesFilterPanel({ locationStatus, locationError }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden py-2 md:hidden">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
-          Filtrar lugares
-        </h2>
-        <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <EquipmentTypeFilters />
-        </div>
-      </div>
-
       {locationError && <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{locationError}</p>}
       {locationStatus === 'ready' && (
         <section aria-live="polite" className="space-y-2">

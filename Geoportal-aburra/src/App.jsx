@@ -122,7 +122,7 @@ function PlaceDetailsCard({
           type="button"
           onClick={onGetDirections}
           disabled={directionsLoading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:brightness-110 disabled:cursor-wait disabled:opacity-60 max-md:min-h-11"
         >
           {directionsLoading
             ? <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -135,7 +135,7 @@ function PlaceDetailsCard({
           href={googleMapsUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors hover:bg-[var(--color-brand)]/10"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors hover:bg-[var(--color-brand)]/10 max-md:min-h-11"
         >
           <Navigation className="h-4 w-4" />
           Abrir en Google Maps
@@ -239,7 +239,18 @@ function GeoportalContent() {
 
   return (
     <>
-      <div className="relative h-dvh w-full overflow-hidden">
+      <div
+        className="relative h-dvh w-full overflow-hidden"
+        style={{
+          '--sheet-h': selectedPlace
+            ? isPanelOpen
+              ? '50dvh'
+              : '88dvh'
+            : isPanelOpen
+              ? 'calc(148px + env(safe-area-inset-bottom))'
+              : '88dvh',
+        }}
+      >
         <main className="relative h-full min-h-0 min-w-0">
           <MapContainer
             isSidebarOpen={isPanelOpen}
@@ -251,24 +262,34 @@ function GeoportalContent() {
         <div
           role="group"
           aria-label="Filtros por categoría"
-          className={`pointer-events-none absolute flex justify-center transition-[left] duration-200 ${isPanelOpen ? 'left-[calc(var(--sidebar-width)+2.75rem)]' : 'left-4'} right-4 top-20 z-30 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[1280px]:right-[19rem] min-[1280px]:top-4`}
+          className={`pointer-events-none fixed left-3 right-3 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
         >
-          <EquipmentTypeFilters className="hidden md:flex" />
+          <EquipmentTypeFilters className="flex md:flex" />
         </div>
         <aside
           id="geoportal-sidebar"
-          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'}`}
+          className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'} max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:left-auto max-md:top-auto max-md:z-40 max-md:h-[var(--sheet-h)] max-md:max-h-none max-md:w-full max-md:translate-x-0 max-md:rounded-t-[20px] max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:p-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-12px_32px_rgba(0,0,0,0.28)] max-md:transition-[height] max-md:duration-[250ms] max-md:ease-out`}
         >
-          <div className="flex shrink-0 items-start justify-between gap-3">
-            <div>
-              <h1 className="text-base font-semibold text-[var(--color-brand-light)]">Geoportal Deportivo Valle de Aburrá</h1>
-              <p className="text-xs text-[var(--color-text-secondary)]">Lugares de entrenamiento, gimnasios y centros deportivos</p>
-            </div>
-            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="rounded p-1 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">
+          <div className="flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-5 max-md:pt-3 max-md:pb-4 md:flex-row">
+            <button
+              type="button"
+              onClick={() => setIsPanelOpen((open) => !open)}
+              aria-label="Alternar altura del panel"
+              className="flex w-full flex-col items-stretch text-left max-md:gap-3 md:pointer-events-none md:cursor-default"
+            >
+              <span className="hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block" />
+              <span className="truncate text-base font-semibold text-[var(--color-brand-light)]">
+                Geoportal Deportivo Valle de Aburrá
+              </span>
+              <span className="truncate text-sm text-[var(--color-text-secondary)] max-md:block md:text-xs">
+                Lugares de entrenamiento, gimnasios y centros deportivos
+              </span>
+            </button>
+            <button type="button" onClick={() => setIsPanelOpen(false)} aria-label="Colapsar panel" className="hidden rounded p-1 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] md:block">
               <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
-          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className={`mt-4 min-h-0 flex-1 overflow-y-auto pr-1 max-md:mt-0 max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] ${selectedPlace || !isPanelOpen ? 'max-md:block' : 'max-md:hidden'} md:pb-0`}>
             <PlacesFilterPanel
               locationStatus={locationStatus}
               locationError={locationError}
@@ -288,7 +309,7 @@ function GeoportalContent() {
           </div>
         </aside>
         {!isPanelOpen && (
-          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-[var(--color-bg-elevated)]">
+          <button type="button" onClick={() => setIsPanelOpen(true)} aria-label="Expandir panel" className="absolute left-4 top-4 z-40 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] p-3 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-[var(--color-bg-elevated)] max-md:hidden">
             <PanelLeftOpen className="h-5 w-5" />
           </button>
         )}

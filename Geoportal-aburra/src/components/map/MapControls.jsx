@@ -85,24 +85,24 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
 
   return (
     <>
-      <div className="absolute bottom-4 left-4 z-20" data-sidebar-open={isSidebarOpen}>
+      <div className="absolute bottom-4 left-4 z-20 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:left-3 max-md:transition-[bottom] max-md:duration-200" data-sidebar-open={isSidebarOpen}>
         <button
           type="button"
           onClick={toggleBaseLayer}
           title={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
           aria-label={isSatellite ? 'Mostrar calles' : 'Mostrar satélite'}
-          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-cover bg-center pb-1.5 text-white shadow-[var(--shadow-card)] transition-transform hover:scale-105"
+          className="relative flex h-16 w-16 flex-col items-center justify-end overflow-hidden rounded-xl border-2 border-white bg-cover bg-center pb-1.5 text-white shadow-[var(--shadow-card)] transition-transform hover:scale-105 max-md:h-11 max-md:w-11"
           style={{
             backgroundImage: 'url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/18/30)',
           }}
         >
           <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/80 to-black/20 px-1 py-1 text-[10px] font-semibold drop-shadow">
-            <Layers className="h-3.5 w-3.5" />
-            Capas
+            <Layers className="h-3.5 w-3.5 max-md:h-5 max-md:w-5" />
+            <span className="max-md:hidden">Capas</span>
           </span>
         </button>
       </div>
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-3">
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-3 max-md:bottom-[calc(var(--sheet-h)+12px)] max-md:right-3 max-md:transition-[bottom] max-md:duration-200">
         <button
           type="button"
           onClick={onRequestLocation}
@@ -120,7 +120,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           onClick={() => changeZoom(1)}
           title="Acercar mapa"
           aria-label="Acercar mapa"
-          className={buttonClassName}
+          className={`${buttonClassName} max-md:hidden`}
         >
           <Plus className="h-5 w-5" />
         </button>
@@ -129,7 +129,7 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           onClick={() => changeZoom(-1)}
           title="Alejar mapa"
           aria-label="Alejar mapa"
-          className={buttonClassName}
+          className={`${buttonClassName} max-md:hidden`}
         >
           <Minus className="h-5 w-5" />
         </button>

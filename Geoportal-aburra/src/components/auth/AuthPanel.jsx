@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, LogOut, UserPlus, X } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, UserRound, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 function getAuthMessage(error) {
@@ -121,18 +121,23 @@ export default function AuthPanel({ mode, setMode }) {
 
   if (user) {
     return (
-      <div className={`absolute ${position} z-30 flex items-center gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm`}>
-        <span className="max-w-40 truncate px-2 text-xs font-semibold text-[var(--color-text-primary)]" title={user.email}>{user.email}</span>
-        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">
-          <LogOut className="h-4 w-4" />
+      <>
+        <div className={`absolute ${position} z-30 hidden items-center gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm md:flex`}>
+          <span className="max-w-40 truncate px-2 text-xs font-semibold text-[var(--color-text-primary)]" title={user.email}>{user.email}</span>
+          <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]">
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="absolute right-3 top-16 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-16 max-md:translate-x-0 max-md:flex">
+          <LogOut className="h-5 w-5" />
         </button>
-      </div>
+      </>
     );
   }
 
   return (
     <>
-      <div className={`absolute ${position} z-30 flex gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm`}>
+      <div className={`absolute ${position} z-30 hidden gap-2 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 p-2 shadow-lg backdrop-blur-sm md:flex`}>
         <button type="button" onClick={() => setMode('login')} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-elevated)]">
           <LogIn className="h-4 w-4" />
           Iniciar sesión
@@ -142,6 +147,9 @@ export default function AuthPanel({ mode, setMode }) {
           Registrarse
         </button>
       </div>
+      <button type="button" onClick={() => setMode('login')} aria-label="Iniciar sesión" title="Iniciar sesión" className="absolute right-3 top-16 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm max-md:left-auto max-md:top-16 max-md:translate-x-0 md:hidden">
+        <UserRound className="h-5 w-5" />
+      </button>
       {mode && <AuthForm mode={mode} onClose={() => setMode(null)} onChangeMode={setMode} />}
     </>
   );
