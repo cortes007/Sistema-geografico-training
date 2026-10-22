@@ -11,7 +11,7 @@ after(async () => {
 });
 
 async function startServer(options) {
-  const server = createRouteServer(options);
+  const server = createRouteServer({ diagnosticsEnabled: false, ...options });
   servers.push(server);
   await new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -138,6 +138,30 @@ test('returns 502 for a non-success response from the routing engine without for
   assert.match(responseBody, /El motor de rutas no está disponible/);
 });
 
+test('logs engine status, response body, and a URL with coordinates redacted in development', async () => {
+  const logEntries = [];
+  const url = await startServer({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    diagnosticsEnabled: true,
+    logger: {
+      info: (...entry) => logEntries.push(entry),
+      error: (...entry) => logEntries.push(entry),
+    },
+    fetchRoute: async () => new Response('upstream diagnostic body', { status: 500 }),
+  });
+
+  const response = await requestRoute(url);
+
+  assert.equal(response.status, 502);
+  assert.equal(logEntries.length, 1);
+  assert.deepEqual(logEntries[0][1], {
+    status: 500,
+    url: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/[coordenadas]?overview=full&geometries=geojson',
+    body: 'upstream diagnostic body',
+  });
+  assert.doesNotMatch(logEntries[0][1].url, /-75\.5|6\.2/);
+});
+
 test('returns 504 when the routing engine request times out', async () => {
   const url = await startServer({
     routingEngineUrl: 'https://routing.openstreetmap.de',
@@ -157,7 +181,7 @@ test('returns 504 when the routing engine response body times out', async () => 
     routingEngineUrl: 'https://routing.openstreetmap.de',
     fetchRoute: async () => ({
       ok: true,
-      json: async () => {
+      text: async () => {
         throw Object.assign(new Error('response body timed out'), { name: 'TimeoutError' });
       },
     }),

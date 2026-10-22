@@ -44,5 +44,5 @@ export function useDirections() {
     setLoading(false);
   }, [clearRoute]);
 
-  return { getDirections, clearDirections, loading, error };
+  return { getDirections, clearDirections, loading, error, setError };
 }

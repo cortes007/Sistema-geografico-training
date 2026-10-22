@@ -187,7 +187,14 @@ function GeoportalContent() {
   const [authMode, setAuthMode] = useState(null);
   const { selectedPlace, clearSelectedPlace, userLocation, route } = useMapContext();
   const { status: locationStatus, error: locationError, requestLocation } = useUserLocation();
-  const { getDirections, clearDirections, loading: directionsLoading, error: directionsError } = useDirections();
+  const {
+    getDirections,
+    clearDirections,
+    loading: directionsLoading,
+    error: directionsError,
+    setError: setDirectionsError,
+  } = useDirections();
+  const [resolvingLocation, setResolvingLocation] = useState(false);
   const pendingDirectionsRef = useRef(null);
   const selectedDetailsRef = useRef(null);
   const selectedPlaceKey = selectedPlace
@@ -207,13 +214,18 @@ function GeoportalContent() {
 
     if (!userLocation) {
       pendingDirectionsRef.current = selectedPlace;
+      setResolvingLocation(true);
       const locationFound = await requestLocation();
-      if (!locationFound) pendingDirectionsRef.current = null;
+      setResolvingLocation(false);
+      if (!locationFound) {
+        pendingDirectionsRef.current = null;
+        setDirectionsError('Debes conceder acceso a tu ubicación actual para calcular la ruta peatonal.');
+      }
       return;
     }
 
     await getDirections(selectedPlace);
-  }, [clearDirections, getDirections, requestLocation, route, selectedPlace, userLocation]);
+  }, [clearDirections, getDirections, requestLocation, route, selectedPlace, setDirectionsError, userLocation]);
 
   useEffect(() => {
     if (!selectedPlace) return;
@@ -311,7 +323,7 @@ function GeoportalContent() {
                   onBack={clearSelectedPlace}
                   onRequestAuth={() => setAuthMode('login')}
                   onGetDirections={handleGetDirections}
-                  directionsLoading={directionsLoading}
+                  directionsLoading={directionsLoading || resolvingLocation}
                   directionsError={directionsError}
                   route={route?.destinationKey === selectedPlaceKey ? route : null}
                 />

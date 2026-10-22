@@ -23,3 +23,10 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+.agents/
+
+#Archivos
+constitution.md
+spec.md
+tasks.md
+dev.ps1

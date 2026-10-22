@@ -42,6 +42,35 @@ function copyRoute(route) {
     };
 }
 
+function sanitizeEngineUrl(engineUrl) {
+    const url = new URL(engineUrl);
+    const pathSegments = url.pathname.split('/');
+    const routeIndex = pathSegments.lastIndexOf('route');
+    if (routeIndex >= 0 && pathSegments[routeIndex + 1] === 'v1') {
+        pathSegments.splice(routeIndex + 3, pathSegments.length, '[coordenadas]');
+    }
+    return `${url.origin}${pathSegments.join('/')}${url.search}`;
+}
+
+function logEngineResponse(engineUrl, status, body, logger, enabled) {
+    if (!enabled) return;
+    const safeBody = body.length > 2000 ? `${body.slice(0, 2000)}… [truncado]` : body;
+    logger.info('[route-server] Respuesta del motor de rutas', {
+        status,
+        url: sanitizeEngineUrl(engineUrl),
+        body: safeBody,
+    });
+}
+
+function logEngineFailure(engineUrl, error, logger, enabled) {
+    if (!enabled) return;
+    logger.error('[route-server] Falló la consulta al motor de rutas', {
+        url: engineUrl ? sanitizeEngineUrl(engineUrl) : '(URL no construida)',
+        errorName: error?.name || 'Error',
+        errorCode: error?.cause?.code || error?.code || 'N/A',
+    });
+}
+
 function isCoordinate(value) {
     return value
         && Number.isFinite(value.latitude)
@@ -118,6 +147,8 @@ export function createRouteServer({
     routeCacheTtlMs = DEFAULT_ROUTE_CACHE_TTL_MS,
     routeCacheMaxEntries = DEFAULT_ROUTE_CACHE_MAX_ENTRIES,
     now = Date.now,
+    logger = console,
+    diagnosticsEnabled = process.env.NODE_ENV !== 'production',
     fetchRoute = fetch,
 } = {}) {
     const rateLimits = new Map();
@@ -198,6 +229,7 @@ export function createRouteServer({
                     signal: timeoutSignal,
                 });
             } catch (error) {
+                logEngineFailure(engineUrl, error, logger, diagnosticsEnabled);
                 if (timeoutSignal.aborted || error.name === 'TimeoutError') {
                     sendJson(response, 504, { error: 'El motor de rutas tardó demasiado en responder.' });
                     return;
@@ -205,14 +237,27 @@ export function createRouteServer({
                 throw error;
             }
             if (!engineResponse.ok) {
+                let responseBody = '';
+                try {
+                    responseBody = await engineResponse.text();
+                } catch {
+                    responseBody = '(no se pudo leer el cuerpo de respuesta)';
+                }
+                logEngineResponse(engineUrl, engineResponse.status, responseBody, logger, diagnosticsEnabled);
                 sendJson(response, 502, { error: 'El motor de rutas no está disponible.' });
                 return;
             }
 
             let result;
+            let responseBody;
             try {
-                result = await engineResponse.json();
+                responseBody = await engineResponse.text();
+                logEngineResponse(engineUrl, engineResponse.status, responseBody, logger, diagnosticsEnabled);
+                result = JSON.parse(responseBody);
             } catch (error) {
+                if (error?.name !== 'SyntaxError') {
+                    logEngineFailure(engineUrl, error, logger, diagnosticsEnabled);
+                }
                 if (timeoutSignal.aborted || error?.name === 'TimeoutError') {
                     sendJson(response, 504, { error: 'El motor de rutas tardó demasiado en responder.' });
                     return;

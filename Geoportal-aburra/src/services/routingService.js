@@ -1,29 +1,48 @@
 const ROUTING_URL = import.meta.env.VITE_ROUTE_API_URL || '/api/routes/foot';
 
 export async function getWalkingRoute(origin, destination) {
-  const routeUrl = new URL(ROUTING_URL, window.location.origin);
-  if (routeUrl.origin !== window.location.origin) {
+  const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  const routeUrl = new URL(ROUTING_URL, baseOrigin);
+  if (typeof window !== 'undefined' && routeUrl.origin !== window.location.origin) {
     throw new Error('El servicio de rutas debe estar en el mismo origen para proteger tu ubicación.');
   }
 
-  const response = await fetch(routeUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      origin: { latitude: origin.latitude, longitude: origin.longitude },
-      destination: { latitude: destination.latitude, longitude: destination.longitude },
-      profile: 'foot',
-    }),
-  });
-  if (!response.ok) {
-    const result = await response.json().catch(() => null);
+  let response;
+  try {
+    response = await fetch(routeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origin: { latitude: origin.latitude, longitude: origin.longitude },
+        destination: { latitude: destination.latitude, longitude: destination.longitude },
+        profile: 'foot',
+      }),
+    });
+  } catch {
     throw new Error(
-      result?.error || `El servicio de rutas respondió con un error (${response.status}).`
+      'No se pudo conectar con el servicio de rutas. Verifica tu conexión a internet o que el servidor backend esté en ejecución.'
     );
   }
 
-  const result = await response.json();
-  const coordinates = result.coordinates;
+  if (!response.ok) {
+    const result = await response.json().catch(() => null);
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new Error('El servicio de rutas no está disponible temporalmente. Inténtalo de nuevo más tarde.');
+    }
+    throw new Error(`El servicio de rutas respondió con un error (${response.status}).`);
+  }
+
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error('El servicio de rutas devolvió una respuesta inválida.');
+  }
+
+  const coordinates = result?.coordinates;
   if (
     !Array.isArray(coordinates)
     || coordinates.length < 2
