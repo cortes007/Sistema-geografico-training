@@ -1,0 +1,14 @@
+{
+  "name": "geoportal-valle-de-aburra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others --names BACK,FRONT --prefix \"[{name}]\" --prefix-colors blue,green \"npm --prefix backend run start:routes\" \"npm --prefix Geoportal-aburra run dev\"",
+    "start": "concurrently --kill-others --names BACK,FRONT --prefix \"[{name}]\" --prefix-colors blue,green \"npm --prefix backend run start:routes\" \"npm --prefix Geoportal-aburra run preview -- --host 127.0.0.1\"",
+    "build": "npm --prefix Geoportal-aburra run build",
+    "install:all": "npm install && npm --prefix backend install && npm --prefix Geoportal-aburra install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

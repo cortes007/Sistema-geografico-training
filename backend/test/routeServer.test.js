@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
-import { createRouteServer } from '../src/infrastructure/http/routeServer.js';
+import { createRouteHandler, createRouteServer } from '../src/infrastructure/http/routeServer.js';
 
 const servers = [];
 
@@ -35,6 +35,26 @@ async function requestRoute(url, body = requestBody, headers = {}) {
   });
 }
 
+function invokeHandler(handler, request) {
+  return new Promise((resolve, reject) => {
+    const response = {
+      status: 200,
+      headers: {},
+      setHeader(name, value) {
+        this.headers[name] = value;
+      },
+      writeHead(status, headers) {
+        this.status = status;
+        Object.assign(this.headers, headers);
+      },
+      end(body) {
+        resolve({ status: this.status, headers: this.headers, body: JSON.parse(body) });
+      },
+    };
+    Promise.resolve(handler(request, response)).catch(reject);
+  });
+}
+
 function successResponse(distance = 1200) {
   return Response.json({
     code: 'Ok',
@@ -45,6 +65,29 @@ function successResponse(distance = 1200) {
     }],
   });
 }
+
+test('accepts a pre-parsed request body from a serverless runtime', async () => {
+  const handler = createRouteHandler({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    diagnosticsEnabled: false,
+    fetchRoute: async () => successResponse(),
+  });
+
+  const response = await invokeHandler(handler, {
+    method: 'POST',
+    url: '/api/routes/foot',
+    headers: { 'content-type': 'application/json' },
+    socket: { remoteAddress: '127.0.0.1' },
+    body: requestBody,
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, {
+    coordinates: [[-75.5, 6.2], [-75.51, 6.21]],
+    distanceMeters: 1200,
+    durationSeconds: 900,
+  });
+});
 
 test('returns a pedestrian route from the configured OSRM-compatible routing engine', async () => {
   let requestedUrl;

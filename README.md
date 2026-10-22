@@ -34,57 +34,56 @@ El geoportal permitira:
 - npm, incluido con Node.js.
 - Un navegador web moderno.
 
-## Instalación
+## Instalación y ejecución local
 
-El código de la aplicación se encuentra en la carpeta `Geoportal-aburra`.
-
-1. Abrir una terminal en la raíz del proyecto.
-2. Entrar en la carpeta de la aplicación:
-
-   ```bash
-   cd Geoportal-aburra
-   ```
-
-3. Instalar las dependencias:
-
-   ```bash
-   npm install
-   ```
-
-Las principales librerías GIS se instalan con el proyecto mediante npm:
+Los comandos se ejecutan desde la raíz y administran las dependencias del proyecto, el backend y el frontend:
 
 ```bash
-npm install ol proj4 shpjs
+npm run install:all
+Copy-Item backend\.env.example backend\.env
+Copy-Item Geoportal-aburra\.env.example Geoportal-aburra\.env
 ```
 
-Tailwind CSS, su integración con Vite y los iconos también forman parte de las dependencias del proyecto:
+Configura `backend/.env` con el motor de rutas que usarás y `Geoportal-aburra/.env` con las credenciales de Supabase y Mapillary que correspondan. Las variables `VITE_*` se incorporan al frontend durante la compilación; no pongas secretos en ellas.
 
-```bash
-npm install tailwindcss @tailwindcss/vite lucide-react
-```
-
-```bash
-npm install jszip
-```
-> Si ya se ejecutó `npm install`, no es necesario repetir los comandos individuales. El archivo `package.json` contiene las dependencias necesarias.
-
-## Ejecución
-
-Iniciar el servidor de desarrollo con recarga automática:
+Iniciar backend y frontend en desarrollo en una sola terminal:
 
 ```bash
 npm run dev
 ```
 
-Vite mostrará en la terminal la dirección local de la aplicación, normalmente `http://localhost:5173`.
+El frontend se sirve normalmente en `http://localhost:5173` y el proxy de Vite reenvía `/api` al backend en `http://127.0.0.1:3001`. Si cambias `ROUTING_API_PORT` en `backend/.env`, actualiza también `VITE_BACKEND_URL` en `Geoportal-aburra/.env` para que el proxy apunte al mismo puerto.
 
-Comandos disponibles:
+Para compilar y probar localmente la versión de producción:
 
 ```bash
-npm run dev       # Inicia el servidor de desarrollo
-npm run build     # Genera la compilación de producción
-npm run lint      # Ejecuta ESLint
-npm run preview   # Sirve localmente la compilación generada
+npm run build
+npm start
+```
+
+El frontend compilado se sirve normalmente en `http://localhost:4173`. `npm run start:routes` sigue disponible desde `backend/` si se necesita ejecutar el backend por separado.
+
+Comandos adicionales del frontend:
+
+```bash
+npm --prefix Geoportal-aburra run lint
+npm --prefix Geoportal-aburra run test
+npm --prefix backend test
+```
+
+## Despliegue en Vercel
+
+Importa el repositorio en Vercel como un solo proyecto y conserva la configuración de `vercel.json`: la compilación usa Vite y publica `Geoportal-aburra/dist`; las peticiones `/api/*` se dirigen a la función `api/routes/foot.js`.
+
+Configura en Vercel las variables `ROUTING_ENGINE_URL` y, si aplica, `ROUTING_USER_AGENT`, `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`, `ROUTE_CACHE_TTL_MS` y `ROUTE_CACHE_MAX_ENTRIES`. Configura también `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_MAPILLARY_CLIENT_TOKEN` para que estén disponibles durante la compilación del frontend. No es necesario configurar `ROUTING_API_PORT` en Vercel.
+
+El backend actual no usa WebSockets, cron ni procesos persistentes. La caché y el límite de solicitudes se mantienen en memoria por instancia serverless; Vercel puede crear varias instancias, por lo que no son compartidos ni un límite global estricto. Si se requiere ese comportamiento, se necesita un almacenamiento compartido para la caché y el rate limit.
+
+Para desplegar con la CLI de Vercel desde la raíz:
+
+```bash
+vercel
+vercel --prod
 ```
 
 ## Sistemas de referencia espacial
