@@ -26,7 +26,7 @@ function getClientIp(request, trustProxy) {
             if (forwardedIp) return forwardedIp;
         }
     }
-    return request.socket.remoteAddress || 'unknown';
+    return request.socket?.remoteAddress || 'unknown';
 }
 
 function createRouteCacheKey(profile, origin, destination) {
@@ -82,6 +82,36 @@ function isCoordinate(value) {
 }
 
 async function readRequestBody(request) {
+    if (request.body !== undefined) {
+        let payload = request.body;
+        if (typeof payload === 'string' || Buffer.isBuffer(payload)) {
+            const rawBody = Buffer.isBuffer(payload) ? payload.toString('utf8') : payload;
+            if (Buffer.byteLength(rawBody) > MAX_BODY_BYTES) {
+                const error = new Error('El cuerpo de la solicitud supera el tamaño permitido.');
+                error.status = 413;
+                throw error;
+            }
+            try {
+                payload = JSON.parse(rawBody);
+            } catch {
+                const error = new Error('El cuerpo de la solicitud debe ser JSON válido.');
+                error.status = 400;
+                throw error;
+            }
+        } else if (Buffer.byteLength(JSON.stringify(payload) ?? '') > MAX_BODY_BYTES) {
+            const error = new Error('El cuerpo de la solicitud supera el tamaño permitido.');
+            error.status = 413;
+            throw error;
+        }
+
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            const error = new Error('El cuerpo de la solicitud debe ser un objeto JSON.');
+            error.status = 400;
+            throw error;
+        }
+        return payload;
+    }
+
     const chunks = [];
     let bodySize = 0;
 
@@ -136,9 +166,7 @@ function buildOsrmUrl(base, profile, origin, destination) {
     return `${baseUrl.origin}${profilePath.prefix}/route/v1/${profilePath.osrmProfile}/${coordinates}?overview=full&geometries=geojson`;
 }
 
-export function createRouteServer({
-    host = '127.0.0.1',
-    port = 3001,
+export function createRouteHandler({
     routingEngineUrl = '',
     routingUserAgent = DEFAULT_ROUTING_USER_AGENT,
     rateLimitMax = DEFAULT_RATE_LIMIT_MAX,
@@ -164,7 +192,7 @@ export function createRouteServer({
         }
     };
 
-    const server = createServer(async (request, response) => {
+    const handler = async (request, response) => {
         const requestUrl = new URL(request.url || '/', 'http://localhost');
         if (request.method !== 'POST' || requestUrl.pathname !== '/api/routes/foot') {
             sendJson(response, 404, { error: 'Ruta no encontrada.' });
@@ -321,16 +349,13 @@ export function createRouteServer({
                 error: error.status ? error.message : 'No se pudo consultar el motor de rutas.',
             });
         }
-    });
+    };
 
-    const cleanupIntervalMs = Math.min(
-        rateLimitWindowMs,
-        routeCacheTtlMs > 0 ? routeCacheTtlMs : rateLimitWindowMs
-    );
-    const cleanupTimer = setInterval(cleanExpiredEntries, cleanupIntervalMs);
-    cleanupTimer.unref();
-    server.on('close', () => clearInterval(cleanupTimer));
-    return server;
+    return handler;
+}
+
+export function createRouteServer(options = {}) {
+    return createServer(createRouteHandler(options));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
