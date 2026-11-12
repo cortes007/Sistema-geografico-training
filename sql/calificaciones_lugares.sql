@@ -26,9 +26,10 @@ CREATE INDEX IF NOT EXISTS idx_calificaciones_lugares_training_spot_id
 CREATE OR REPLACE FUNCTION public.actualizar_fecha_calificacion_lugar()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = ''
 AS $$
 BEGIN
-  NEW.fecha_actualizacion = now();
+  NEW.fecha_actualizacion = pg_catalog.now();
   RETURN NEW;
 END;
 $$;
@@ -56,7 +57,7 @@ CREATE POLICY "Cada usuario crea su propia calificacion"
   ON public.calificaciones_lugares
   FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = usuario_id);
+  WITH CHECK ((select auth.uid()) = usuario_id);
 
 DROP POLICY IF EXISTS "Cada usuario actualiza su propia calificacion"
   ON public.calificaciones_lugares;
@@ -64,9 +65,10 @@ CREATE POLICY "Cada usuario actualiza su propia calificacion"
   ON public.calificaciones_lugares
   FOR UPDATE
   TO authenticated
-  USING (auth.uid() = usuario_id)
-  WITH CHECK (auth.uid() = usuario_id);
+  USING ((select auth.uid()) = usuario_id)
+  WITH CHECK ((select auth.uid()) = usuario_id);
 
+REVOKE ALL ON TABLE public.calificaciones_lugares FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.calificaciones_lugares TO anon, authenticated;
 GRANT INSERT, UPDATE ON public.calificaciones_lugares TO authenticated;
 

@@ -20,6 +20,28 @@ El sidebar muestra hasta tres lugares calificados del radio, ordenados por una m
 
 Para habilitar el ranking en Supabase, ejecuta [`sql/lugares_cercanos_mejor_calificados.sql`](../sql/lugares_cercanos_mejor_calificados.sql) después de crear `public.calificaciones_lugares` con el script anterior. El script agrega `training_spot_id`, intenta asociar opiniones históricas por nombre, tipo y cercanía de hasta 30 m y crea la RPC `listar_calificaciones_agregadas_lugares`. Solo se devuelven promedios y recuentos agregados; el filtrado geográfico y la distancia se calculan en el navegador, por lo que la ubicación del usuario no se envía a Supabase.
 
+## Seguridad RLS, Migraciones y RPCs en Supabase
+
+### Trazabilidad de migraciones (`supabase/migrations/`)
+La base de datos de Supabase (`agxaidzgnbgnzihefbdf`) mantiene migraciones versionadas en Git bajo [`supabase/migrations/`](../supabase/migrations/) (manteniendo ignorados `supabase/.temp/` y `node_modules/` en [`.gitignore`](../.gitignore)):
+1. `20261112220341_baseline_social_rls_snapshot.sql`: Snapshot base previo al endurecimiento de seguridad.
+2. `20261112223104_rls_and_schema_hardening.sql`: Endurecimiento de esquema (`fecha_hora_fin` nullable en `eventos_quedadas`, `CHECK` de rango de fechas y longitud de `titulo`/`descripcion`), habilitación de RLS + `REVOKE ALL` en `public.schema_migrations`, revocación de privilegios excesivos en `public`, políticas RLS optimizadas con `(select auth.uid())` y `WITH CHECK` explícito, eliminación del índice duplicado `training_spots_geom_idx` e índice `idx_eventos_quedadas_training_spot_id`.
+3. `20261112225647_functions_security_hardening.sql`: Creación del esquema `private` (no expuesto por PostgREST) y del helper `private.contar_asistentes_evento(uuid)`, fijación de `SET search_path = ''` en las funciones `public`, endurecimiento del trigger `public.crear_perfil_usuario()` con fallback seguro a `'principiante'` y revocación de `EXECUTE` para `PUBLIC`/`anon`/`authenticated`, y eliminación de la función obsoleta `public.buscar_eventos_proximos(double precision, double precision, double precision)`.
+
+Los scripts de referencia en [`sql/functions.sql`](../sql/functions.sql), [`sql/calificaciones_lugares.sql`](../sql/calificaciones_lugares.sql), [`sql/lugares_cercanos_mejor_calificados.sql`](../sql/lugares_cercanos_mejor_calificados.sql) y [`backend/migrations/003_tables.sql`](../backend/migrations/003_tables.sql) se mantienen sincronizados con estas definiciones.
+
+### Modelo RLS vigente y conteo privado de asistencias
+- **`public.schema_migrations`:** RLS habilitado y cero privilegios para `PUBLIC`, `anon` y `authenticated`.
+- **`public.usuarios`:** Acceso `SELECT`, `INSERT` y `UPDATE` exclusivamente para `authenticated` cuando `(select auth.uid()) = id` (sin lectura entre usuarios ni acceso de `anon`).
+- **`public.eventos_quedadas`:** Lectura pública (`anon, authenticated`); `INSERT` restringido a `authenticated` con `(select auth.uid()) = organizador_id AND fecha_hora_inicio > now()`; `UPDATE` y `DELETE` restringidos al organizador (`USING` y `WITH CHECK`).
+- **`public.asistencias_evento`:** Lectura y escritura privadas (`authenticated`, `(select auth.uid()) = usuario_id`) para evitar filtrar `usuario_id` entre asistentes o hacia `anon`.
+- **Conteo agregado seguro (`private.contar_asistentes_evento(uuid)`):** Las RPC `listar_quedadas()` y `listar_eventos_proximos(varchar)` operan con `SECURITY INVOKER` y `SET search_path = ''`, delegando únicamente el conteo agregado en `private.contar_asistentes_evento(uuid)` (`SECURITY DEFINER`, `SET search_path = ''`), de modo que visitantes `anon` y usuarios autenticados reciben `asistentes_confirmados` real sin exponer filas de `asistencias_evento`.
+- **`public.calificaciones_lugares`:** Lectura pública (`anon, authenticated`); `INSERT` y `UPDATE` restringidos a `authenticated` con `(select auth.uid()) = usuario_id`.
+- **`public.training_spots`:** Lectura pública (`anon, authenticated`) sin inserción directa desde cliente tras eliminar la política `"Crear spots"`.
+
+### Verificación SQL automatizada
+- La suite transaccional (`BEGIN; ... ROLLBACK;`) ubicada en [`supabase/tests/rls_security_checks.sql`](../supabase/tests/rls_security_checks.sql) verifica aislamiento de `anon`, lectura privada por usuario, integridad de `organizador_id`/`usuario_id`, restricciones temporales y `fecha_hora_fin = NULL` en `eventos_quedadas`, bloqueo de escritura en `training_spots`, conteo agregado en `listar_eventos_proximos()` y fallback seguro de `crear_perfil_usuario()`.
+
 El botón **Cómo llegar** dibuja una ruta peatonal morada usando el endpoint de mismo origen `/api/routes/foot` (o el valor de mismo origen indicado en `VITE_ROUTE_API_URL`). Agrega las variables de [`backend/.env.example`](../backend/.env.example) a tu `backend/.env` existente —sin reemplazar otras variables como `DATABASE_URL`— y configura `ROUTING_ENGINE_URL` únicamente con la URL base del servicio OSRM-compatible, sin paths; por ejemplo, `https://routing.openstreetmap.de`. Configura `ROUTING_USER_AGENT` con un identificador de la aplicación; por defecto se usa `Geoportal-Valle-de-Aburra/1.0`, que se envía como cabecera `User-Agent` al motor de rutas. Para el perfil `foot`, el backend agrega `/routed-foot/route/v1/foot/` y las coordenadas al URL base.
 
 ### Ejecución y Orquestación en Desarrollo

@@ -61,17 +61,17 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
-SET search_path = public, extensions
+SET search_path = ''
 AS $$
   WITH global_rating AS (
-    SELECT AVG(calificacion)::DOUBLE PRECISION AS average
+    SELECT pg_catalog.avg(calificacion)::DOUBLE PRECISION AS average
     FROM public.calificaciones_lugares
   ),
   ratings_by_spot AS (
     SELECT
       training_spot_id,
-      AVG(calificacion)::DOUBLE PRECISION AS average_rating,
-      COUNT(*)::BIGINT AS rating_count
+      pg_catalog.avg(calificacion)::DOUBLE PRECISION AS average_rating,
+      pg_catalog.count(*)::BIGINT AS rating_count
     FROM public.calificaciones_lugares
     WHERE training_spot_id IS NOT NULL
     GROUP BY training_spot_id
@@ -86,11 +86,12 @@ AS $$
     ) * ratings_by_spot.average_rating
     + (
       3::DOUBLE PRECISION / (ratings_by_spot.rating_count + 3)
-    ) * COALESCE(global_rating.average, 0)
+    ) * COALESCE(global_rating.average, 0) AS ranking_rating
   FROM ratings_by_spot
   CROSS JOIN global_rating;
 $$;
 
+REVOKE ALL ON FUNCTION public.listar_calificaciones_agregadas_lugares() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.listar_calificaciones_agregadas_lugares()
   TO anon, authenticated;
 

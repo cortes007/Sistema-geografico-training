@@ -6,7 +6,7 @@ CREATE TABLE usuarios (
   foto_perfil_url TEXT,
   fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now(),
   activo BOOLEAN NOT NULL DEFAULT true,
-  CONSTRAINT usuarios_nombre_usuario_key UNIQUE (nombre_usuario),
+  CONSTRAINT usuarios_nombre_usuario_key UNIQUE (nombre_usuario)
 );
 
 CREATE TABLE eventos_quedadas (
