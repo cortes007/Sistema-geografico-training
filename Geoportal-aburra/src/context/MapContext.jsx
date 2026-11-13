@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { EQUIPMENT_TYPES } from '../constants/equipmentTypes';
 import { getAnimationDuration } from '../utils/gis/mapCentering';
@@ -18,33 +18,53 @@ export function MapProvider({ children }) {
     Object.values(EQUIPMENT_TYPES).reduce((types, type) => ({ ...types, [type]: true }), {})
   );
 
+  const mapRef = useRef(map);
+  const layersRef = useRef(layers);
+  const selectedPlaceRef = useRef(selectedPlace);
+
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map]);
+
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
+
+  useEffect(() => {
+    selectedPlaceRef.current = selectedPlace;
+  }, [selectedPlace]);
+
   const addLayer = useCallback((layer) => {
     setLayers((prev) => {
       if (layer.layerKey && prev.some((item) => item.layerKey === layer.layerKey)) {
-        if (map) map.removeLayer(layer.olLayer);
+        if (mapRef.current) mapRef.current.removeLayer(layer.olLayer);
         return prev;
       }
 
       return [...prev, layer];
     });
-  }, [map]);
+  }, []);
 
   const removeLayer = useCallback((id) => {
-    const target = layers.find((layer) => layer.id === id);
+    const currentLayers = layersRef.current;
+    const currentMap = mapRef.current;
+    const currentSelectedPlace = selectedPlaceRef.current;
+
+    const target = currentLayers.find((layer) => layer.id === id);
     if (!target) return;
 
-    if (map) map.removeLayer(target.olLayer);
-    const remainingLayers = layers.filter((layer) => layer.id !== id);
+    if (currentMap) currentMap.removeLayer(target.olLayer);
+    const remainingLayers = currentLayers.filter((layer) => layer.id !== id);
     setLayers(remainingLayers);
 
     const source = target.olLayer.getSource();
-    const selectedFeatureBelongsToLayer = source?.hasFeature?.(selectedPlace?.feature)
-      || (target.name === 'training_spots' && Boolean(selectedPlace?.trainingSpotId));
-    if (selectedPlace?.feature && selectedFeatureBelongsToLayer) {
+    const selectedFeatureBelongsToLayer = source?.hasFeature?.(currentSelectedPlace?.feature)
+      || (target.name === 'training_spots' && Boolean(currentSelectedPlace?.trainingSpotId));
+    if (currentSelectedPlace?.feature && selectedFeatureBelongsToLayer) {
       setSelectedPlace(null);
     }
 
-    if (!map || remainingLayers.length === 0) return;
+    if (!currentMap || remainingLayers.length === 0) return;
 
     const remainingExtent = createEmpty();
     remainingLayers.forEach(({ olLayer }) => {
@@ -53,13 +73,13 @@ export function MapProvider({ children }) {
     });
 
     if (!isEmpty(remainingExtent)) {
-      map.getView().fit(remainingExtent, {
+      currentMap.getView().fit(remainingExtent, {
         padding: [40, 40, 40, 40],
         maxZoom: 17,
         duration: getAnimationDuration(400),
       });
     }
-  }, [layers, map, selectedPlace]);
+  }, []);
 
   const toggleLayerVisibility = useCallback((id) => {
     setLayers((prev) =>

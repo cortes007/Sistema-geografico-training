@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import { useOpenMap } from '../../hooks/useOpenMap';
-import { useCoordinateCapture } from '../../hooks/useCoordinateCapture';
 import { useClickMarker } from '../../hooks/useClickMarker';
 import { useLocationOverlay } from '../../hooks/useLocationOverlay';
 import { useRouteOverlay } from '../../hooks/useRouteOverlay';
@@ -15,7 +14,6 @@ export default function MapContainer({ isSidebarOpen, locationStatus, locationEr
   const { map } = useMapContext();
   const [toast, setToast] = useState('');
   useOpenMap(targetRef);
-  useCoordinateCapture();
   useClickMarker();
   useLocationOverlay();
   useRouteOverlay();

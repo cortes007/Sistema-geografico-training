@@ -1,14 +1,52 @@
 import { toLonLat } from 'ol/proj';
 import { buildFallbackPlaceImage } from '../placeDetails.js';
 
-const photoCache = new Map(); // featureId -> resultado (o null)
-const photoRequests = new Map(); // featureId -> promesa en curso
-const EXTERNAL_REQUEST_TIMEOUT_MS = 3500;
-const MAPILLARY_TIMEOUT_MS = 3500;
+const photoCache = new Map(); // cacheKey -> resultado (o null)
+const photoRequests = new Map(); // cacheKey -> promesa en curso
+export const EXTERNAL_REQUEST_TIMEOUT_MS = 1800;
+const MAPILLARY_TIMEOUT_MS = 1800;
+
+export function clearPlacePhotoCache() {
+  photoCache.clear();
+  photoRequests.clear();
+}
+
+export function getFeatureCacheKey(feature) {
+  if (!feature) return '';
+  const props =
+    typeof feature.getProperties === 'function' ? feature.getProperties() : {};
+  const explicitId =
+    props.trainingSpotId ??
+    props.training_spot_id ??
+    props.id ??
+    (typeof feature.getId === 'function' ? feature.getId() : undefined);
+
+  if (
+    explicitId !== undefined &&
+    explicitId !== null &&
+    String(explicitId).trim() !== ''
+  ) {
+    return `id:${String(explicitId).trim()}`;
+  }
+
+  const name = props.name || props.nombre || '';
+  const geom =
+    typeof feature.getGeometry === 'function' ? feature.getGeometry() : null;
+  const coords =
+    geom && typeof geom.getCoordinates === 'function'
+      ? JSON.stringify(geom.getCoordinates())
+      : '';
+
+  if (name || coords) {
+    return `place:${name}|${coords}`;
+  }
+
+  return feature;
+}
 
 export async function getPlacePhoto(feature) {
   const props = feature.getProperties();
-  const id = feature.getId() ?? props.id ?? feature;
+  const id = getFeatureCacheKey(feature);
   if (photoCache.has(id)) return photoCache.get(id);
   if (photoRequests.has(id)) return photoRequests.get(id);
 

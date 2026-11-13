@@ -8,6 +8,48 @@ import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
 import { getEquipmentTypeFromProperties } from '../constants/equipmentTypes';
 import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 
+export const NEARBY_TILE_SCAN_MAX_ZOOM = 14;
+
+export function getNearbyScanZoom(tileGrid, viewResolution) {
+  if (!tileGrid || typeof tileGrid.getZForResolution !== 'function') {
+    return NEARBY_TILE_SCAN_MAX_ZOOM;
+  }
+  const rawZoom = tileGrid.getZForResolution(viewResolution);
+  if (!Number.isFinite(rawZoom)) {
+    return NEARBY_TILE_SCAN_MAX_ZOOM;
+  }
+  return Math.min(rawZoom, NEARBY_TILE_SCAN_MAX_ZOOM);
+}
+
+export function createBatchedTileUpdater(
+  updateFn,
+  requestFrame = typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : (cb) => setTimeout(cb, 16),
+  cancelFrame = typeof cancelAnimationFrame === 'function'
+    ? cancelAnimationFrame
+    : clearTimeout
+) {
+  let frameId = null;
+
+  const schedule = () => {
+    if (frameId !== null) return;
+    frameId = requestFrame(() => {
+      frameId = null;
+      updateFn();
+    });
+  };
+
+  const cancel = () => {
+    if (frameId !== null) {
+      cancelFrame(frameId);
+      frameId = null;
+    }
+  };
+
+  return { schedule, cancel };
+}
+
 function distanceBetweenCoordinates(first, second) {
   const radians = (degrees) => (degrees * Math.PI) / 180;
   const latitudeDelta = radians(second[1] - first[1]);
@@ -95,6 +137,10 @@ export function useNearbyPlaces() {
       });
       setTrainingSpotFeatures([...featuresById.values()]);
     };
+    const {
+      schedule: scheduleUpdateFeatures,
+      cancel: cancelScheduledUpdate,
+    } = createBatchedTileUpdater(updateFeatures);
 
     layers
       .filter((layer) => layer.name === 'training_spots')
@@ -120,13 +166,13 @@ export function useNearbyPlaces() {
           centerY + radius,
         ];
         const tileGrid = source.getTileGrid();
-        const zoom = tileGrid.getZForResolution(map.getView().getResolution());
+        const zoom = getNearbyScanZoom(tileGrid, map.getView().getResolution());
         const tileRange = tileGrid.getTileRangeForExtentAndZ(extent, zoom);
         const tiles = [];
         tileCollections.push(tiles);
 
-        source.on('tileloadend', updateFeatures);
-        source.on('tileloaderror', updateFeatures);
+        source.on('tileloadend', scheduleUpdateFeatures);
+        source.on('tileloaderror', scheduleUpdateFeatures);
 
         for (let x = tileRange.minX; x <= tileRange.maxX; x += 1) {
           for (let y = tileRange.minY; y <= tileRange.maxY; y += 1) {
@@ -138,12 +184,13 @@ export function useNearbyPlaces() {
     updateFeatures();
 
     return () => {
+      cancelScheduledUpdate();
       layers
         .filter((layer) => layer.name === 'training_spots')
         .forEach((layer) => {
           const source = layer.olLayer.getSource();
-          source?.un('tileloadend', updateFeatures);
-          source?.un('tileloaderror', updateFeatures);
+          source?.un('tileloadend', scheduleUpdateFeatures);
+          source?.un('tileloaderror', scheduleUpdateFeatures);
         });
     };
   }, [layers, map, userLocation]);

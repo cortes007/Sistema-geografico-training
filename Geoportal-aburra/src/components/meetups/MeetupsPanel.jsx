@@ -7,7 +7,7 @@ import {
   crearEvento,
   eliminarEvento,
   listarEventosPorSpot,
-  usuarioEstaInscrito,
+  listarInscripcionesUsuario,
 } from '../../services/eventosService';
 
 const emptyForm = { titulo: '', descripcion: '', fechaHoraInicio: '', fechaHoraFin: '' };
@@ -62,26 +62,17 @@ function EventForm({ spotId, initialValues = emptyForm, onSaved, onCancel, event
   );
 }
 
-function EventCard({ event, user, onChange }) {
-  const [registered, setRegistered] = useState(false);
+function EventCard({ event, user, isRegistered = false, onChange }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    if (!user) return undefined;
-    usuarioEstaInscrito(event.id).then((value) => active && setRegistered(value)).catch((reason) => active && setError(reason.message));
-    return () => { active = false; };
-  }, [event.id, user]);
 
   const toggleAttendance = async () => {
     setBusy(true);
     setError('');
     try {
-      if (registered) await cancelarAsistencia(event.id);
+      if (isRegistered) await cancelarAsistencia(event.id);
       else await confirmarAsistencia(event.id);
-      setRegistered((value) => !value);
       onChange();
     } catch (reason) {
       setError(reason.message || 'No se pudo actualizar la asistencia.');
@@ -112,7 +103,7 @@ function EventCard({ event, user, onChange }) {
       </div>
       {event.descripcion && <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.descripcion}</p>}
       <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{event.asistentesConfirmados} asistentes</p>
-      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 min-h-11 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-accent-primary)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">{registered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
+      {user && <button type="button" onClick={toggleAttendance} disabled={busy} className="mt-2 min-h-11 rounded-lg bg-[var(--color-accent-success)] px-3 py-2 text-xs font-semibold text-[var(--color-on-brand)] transition-all duration-200 motion-reduce:transition-none hover:bg-[var(--color-accent-primary)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">{isRegistered ? 'Cancelar asistencia' : 'Confirmar asistencia'}</button>}
       {isOrganizer && (
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={() => setEditing((value) => !value)} className="min-h-11 px-2 text-xs font-semibold text-[var(--color-accent-primary)] hover:text-[var(--color-accent-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]">Editar</button>
@@ -128,6 +119,7 @@ function EventCard({ event, user, onChange }) {
 export default function MeetupsPanel({ spotId }) {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -135,14 +127,23 @@ export default function MeetupsPanel({ spotId }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setEvents(await listarEventosPorSpot(spotId));
+      const loadedEvents = await listarEventosPorSpot(spotId);
+      setEvents(loadedEvents);
+      if (user && loadedEvents.length > 0) {
+        const ids = await listarInscripcionesUsuario(
+          loadedEvents.map((item) => item.id)
+        );
+        setRegisteredEventIds(new Set(ids));
+      } else {
+        setRegisteredEventIds(new Set());
+      }
       setError('');
     } catch (reason) {
       setError(reason.message || 'No se pudieron cargar las quedadas.');
     } finally {
       setLoading(false);
     }
-  }, [spotId]);
+  }, [spotId, user]);
 
   useEffect(() => {
     Promise.resolve().then(load);
@@ -158,7 +159,7 @@ export default function MeetupsPanel({ spotId }) {
       {loading && <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">Cargando quedadas...</p>}
       {error && <p role="alert" className="mt-3 rounded-lg bg-[var(--color-accent-danger)]/20 p-2 text-xs text-[var(--color-accent-danger)]">{error}</p>}
       {!loading && !error && events.length === 0 && <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--color-text-secondary)]">No hay quedadas próximas en este lugar.</p>}
-      <div className="mt-3 space-y-2">{events.map((event) => <EventCard key={event.id} event={event} user={user} onChange={load} />)}</div>
+      <div className="mt-3 space-y-2">{events.map((event) => <EventCard key={event.id} event={event} user={user} isRegistered={registeredEventIds.has(event.id)} onChange={load} />)}</div>
     </section>
   );
 }

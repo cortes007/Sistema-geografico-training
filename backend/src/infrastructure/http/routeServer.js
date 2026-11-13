@@ -238,6 +238,8 @@ export function createRouteHandler({
             const cacheKey = createRouteCacheKey(payload.profile, payload.origin, payload.destination);
             const cachedRoute = routeCache.get(cacheKey);
             if (cachedRoute && cachedRoute.expiresAt > now()) {
+                routeCache.delete(cacheKey);
+                routeCache.set(cacheKey, cachedRoute);
                 sendJson(response, 200, copyRoute(cachedRoute.route));
                 return;
             }
@@ -335,6 +337,9 @@ export function createRouteHandler({
                 durationSeconds: route.duration,
             };
             if (routeCacheTtlMs > 0 && routeCacheMaxEntries > 0) {
+                if (routeCache.has(cacheKey)) {
+                    routeCache.delete(cacheKey);
+                }
                 while (routeCache.size >= routeCacheMaxEntries) {
                     routeCache.delete(routeCache.keys().next().value);
                 }

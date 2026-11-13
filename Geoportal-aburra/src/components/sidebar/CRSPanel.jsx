@@ -1,8 +1,10 @@
 import { useMapContext } from '../../context/useMapContext';
 import { CRS_OPTIONS } from '../../config/crsDefinitions';
 import CoordinateDisplay from '../ui/CoordinateDisplay';
+import { useCoordinateCapture } from '../../hooks/useCoordinateCapture';
 
 export default function CRSPanel() {
+  useCoordinateCapture();
   const { activeCRS, setActiveCRS, capturedCoord } = useMapContext();
 
   return (

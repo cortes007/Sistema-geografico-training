@@ -386,3 +386,45 @@ test('ignores X-Forwarded-For unless proxy trust is enabled', async () => {
   assert.equal((await requestRoute(url, requestBody, { 'X-Forwarded-For': '198.51.100.1' })).status, 200);
   assert.equal((await requestRoute(url, requestBody, { 'X-Forwarded-For': '203.0.113.8' })).status, 429);
 });
+
+test('evicts the least recently used (LRU) route when routeCacheMaxEntries is reached', async () => {
+  let routeCalls = 0;
+  const url = await startServer({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    routeCacheMaxEntries: 2,
+    fetchRoute: async () => {
+      routeCalls += 1;
+      return successResponse();
+    },
+  });
+
+  const routeA = requestBody;
+  const routeB = {
+    ...requestBody,
+    destination: { ...requestBody.destination, longitude: -75.52 },
+  };
+  const routeC = {
+    ...requestBody,
+    destination: { ...requestBody.destination, longitude: -75.53 },
+  };
+
+  assert.equal((await requestRoute(url, routeA)).status, 200);
+  assert.equal((await requestRoute(url, routeB)).status, 200);
+  assert.equal(routeCalls, 2);
+
+  // Accessing routeA promotes it as most recently used; routeB becomes LRU
+  assert.equal((await requestRoute(url, routeA)).status, 200);
+  assert.equal(routeCalls, 2);
+
+  // Inserting routeC with maxEntries=2 must evict routeB and keep routeA
+  assert.equal((await requestRoute(url, routeC)).status, 200);
+  assert.equal(routeCalls, 3);
+
+  // routeA should still be cached (no new fetch)
+  assert.equal((await requestRoute(url, routeA)).status, 200);
+  assert.equal(routeCalls, 3);
+
+  // routeB was evicted so requesting it triggers a new fetch
+  assert.equal((await requestRoute(url, routeB)).status, 200);
+  assert.equal(routeCalls, 4);
+});

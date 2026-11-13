@@ -59,12 +59,32 @@ La API responde con `coordinates` como pares `[longitud, latitud]`, `distanceMet
 `routingService.js` captura excepciones de conexión (`TypeError: Failed to fetch`) y códigos de estado HTTP de indisponibilidad temporal (502, 503, 504), devolviendo mensajes claros y localizados en español. En la interfaz (`App.jsx`), si el usuario pulsa **Cómo llegar** sin ubicación establecida y la geolocalización no se concede o falla, la tarjeta de detalle muestra la alerta: *"Debes conceder acceso a tu ubicación actual para calcular la ruta peatonal."*, evitando botones inertes.
 
 ### Pruebas Automatizadas
-- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (incluye pruebas unitarias mockeadas para `routingService` y utilidades de lugares).
-- **Backend:** Ejecuta `npm test --prefix backend` para correr la suite con el test runner nativo de Node.js (17 pruebas cubriendo timeout 504, 502, 404 NoRoute, rate limiting y caché en memoria).
+- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (`20` pruebas unitarias en `6` suites cubriendo `routingService`, `placeDetails`, `layerStyles`, `useNearbyPlaces`, `eventosService` y `getPlacePhoto`).
+- **Backend:** Ejecuta `npm test --prefix backend` para correr la suite con el test runner nativo de Node.js (`19` pruebas en `routeServer.test.js` + pruebas de validación/normalización/exportación cubriendo timeout 504, 502, 404 NoRoute, rate limiting y caché LRU en memoria).
 
 El backend aplica un rate limit por IP con ventana fija: `RATE_LIMIT_MAX` define el máximo de solicitudes por IP (por defecto `30`) y `RATE_LIMIT_WINDOW_MS` la duración de la ventana (por defecto `60000` ms). Al excederlo responde HTTP 429 con `Retry-After`. La IP se toma de la conexión (`req.socket.remoteAddress`); solo se usa el primer valor de `X-Forwarded-For` cuando `TRUST_PROXY=true`. Las entradas expiradas se limpian periódicamente.
 
-Las rutas exitosas se guardan en una caché en memoria. `ROUTE_CACHE_TTL_MS` define su duración (por defecto `600000` ms) y `ROUTE_CACHE_MAX_ENTRIES` el máximo de entradas (por defecto `500`); con capacidad llena se descarta la más antigua. Solo se guardan respuestas 200, las coordenadas se redondean a cuatro decimales únicamente para la clave de caché y una consulta fallida al caché se envía al motor con las coordenadas originales. Un valor `0` en TTL o cantidad máxima desactiva la caché. Las respuestas se copian al guardar y devolver para evitar mutaciones compartidas.
+Las rutas exitosas se guardan en una caché **LRU (Least Recently Used)** en memoria (`O(1)`): `ROUTE_CACHE_TTL_MS` define su duración (por defecto `600000` ms) y `ROUTE_CACHE_MAX_ENTRIES` el máximo de entradas (por defecto `500`); en cada acierto válido se promueve la clave al final del `Map` (`delete` + `set`) y con capacidad llena se descarta la menos recientemente usada. Solo se guardan respuestas 200, las coordenadas se redondean a cuatro decimales únicamente para la clave de caché y una consulta fallida al caché se envía al motor con las coordenadas originales. Un valor `0` en TTL o cantidad máxima desactiva la caché. Las respuestas se copian al guardar y devolver para evitar mutaciones compartidas.
+
+### Optimizaciones de Rendimiento y Bundle (2026-11-12)
+1. **Aislamiento de módulos GIS inactivos y Code-Splitting (`vite.config.js`, `useTrainingSpotsLayer.js`, `layerStyles.js`):**
+   - La carga activa de teselas MVT (`training_spots`) se extrajo a `Geoportal-aburra/src/hooks/useTrainingSpotsLayer.js` y `Geoportal-aburra/src/utils/gis/layerStyles.js`.
+   - Los módulos de carga de archivos locales y reproyección (`useLayerLoader.js`, `useLayerManager.js`, `LayerPanel.jsx`, `CRSPanel.jsx`, `useCoordinateCapture.js`) se conservan intactos en el repositorio para futura reactivación, pero fuera del grafo de arranque activo (con `import('jszip')` e `import('shpjs')` dinámicos).
+   - `useCoordinateCapture()` se trasladó de `MapContainer.jsx` a `CRSPanel.jsx` para evitar re-renders globales en cada clic del mapa mientras `CRSPanel` está inactivo.
+   - `vite.config.js` particiona el bundle en `vendor-ol`, `vendor-supabase`, `vendor-react` e `index` (todos `< 350 kB`).
+2. **Caché $O(1)$ de estilos OpenLayers y pre-cálculo MVT (`layerStyles.js`):**
+   - `prepareTrainingSpotFeature(feature)` pre-calcula `equipmentType` y `representativePoint` una sola vez al decodificar cada tesela MVT.
+   - `createMarkerStyle(color, useRepresentativePoint)` reutiliza instancias inmutables de `Style` desde un `Map` en memoria.
+3. **Escaneo MVT acotado y batching por frame (`useNearbyPlaces.js`):**
+   - `getNearbyScanZoom(tileGrid, viewResolution)` acota el nivel de zoom de escaneo espacial de 3 km a `NEARBY_TILE_SCAN_MAX_ZOOM = 14`.
+   - `createBatchedTileUpdater` agrupa múltiples eventos `tileloadend` / `tileloaderror` en una única actualización por `requestAnimationFrame`.
+4. **Consultas en lote de inscripciones y alcance por spot (`eventosService.ts`, `MeetupsPanel.jsx`):**
+   - `listarInscripcionesUsuario(eventoIds)` resuelve las asistencias del usuario autenticado en una sola consulta `.in('evento_id', uniqueIds)`, eliminando el patrón `N+1` en `EventCard`.
+   - `crearEvento` recupera el detalle recién creado mediante `listarEventosPorSpot(trainingSpotId)` en lugar de `listarEventosProximos()`.
+5. **Estabilidad de `MapContext`, caché de fotos por ID estable y LRU en backend (`MapContext.jsx`, `getPlacePhoto.js`, `routeServer.js`):**
+   - `addLayer` y `removeLayer` mantienen referencias estables en `MapContext.jsx` apoyándose en `useRef`.
+   - `getPlacePhoto.js` indexa `photoCache` por clave estable (`getFeatureCacheKey`) con timeout externo de `1800 ms`.
+   - `routeServer.js` promueve las entradas consultadas en `routeCache` para garantizar expulsión LRU real en $O(1)$.
 
 ## Estructura del proyecto
 

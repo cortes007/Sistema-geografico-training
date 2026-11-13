@@ -124,7 +124,9 @@ export async function crearEvento(datosEvento: CrearEventoDTO): Promise<EventoQu
     .select('id')
     .single();
   if (error) throwSupabaseError('No se pudo crear el evento', error);
-  const eventoCreado = (await listarEventosProximos()).find((evento) => evento.id === data.id);
+  const eventoCreado = (await listarEventosPorSpot(trainingSpotId)).find(
+    (evento) => evento.id === data.id,
+  );
   if (!eventoCreado) {
     throw new Error('El evento fue creado, pero no se pudo recuperar su detalle.');
   }
@@ -212,4 +214,20 @@ export async function usuarioEstaInscrito(eventoId: UUID): Promise<boolean> {
     .maybeSingle();
   if (error) throwSupabaseError('No se pudo consultar la asistencia', error);
   return Boolean(data);
+}
+
+export async function listarInscripcionesUsuario(eventoIds: UUID[]): Promise<UUID[]> {
+  const uniqueIds = Array.from(
+    new Set((eventoIds ?? []).map((id) => id?.trim()).filter(Boolean)),
+  );
+  if (uniqueIds.length === 0) return [];
+
+  const user = await getAuthenticatedUser();
+  const { data, error } = await supabase
+    .from('asistencias_evento')
+    .select('evento_id')
+    .in('evento_id', uniqueIds)
+    .eq('usuario_id', user.id);
+  if (error) throwSupabaseError('No se pudieron consultar las asistencias', error);
+  return (data ?? []).map((row) => row.evento_id);
 }

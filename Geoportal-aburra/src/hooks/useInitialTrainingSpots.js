@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useMapContext } from '../context/useMapContext';
-import { useLayerLoader } from './useLayerLoader';
+import { useTrainingSpotsLayer } from './useTrainingSpotsLayer';
 
 export function useInitialTrainingSpots() {
   const { map, trainingSpotsError, setTrainingSpotsError } = useMapContext();
-  const { loadTrainingSpots } = useLayerLoader();
+  const { loadTrainingSpots } = useTrainingSpotsLayer();
 
   useEffect(() => {
     if (!map || map.get('initialTrainingSpotsLoadStarted')) return;
