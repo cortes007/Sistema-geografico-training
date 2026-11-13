@@ -9,7 +9,15 @@ import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import MapControls from './MapControls';
 import { useMapContext } from '../../context/useMapContext';
 
-export default function MapContainer({ isSidebarOpen, locationStatus, locationError, onRequestLocation }) {
+export default function MapContainer({
+  isSidebarOpen,
+  locationStatus,
+  locationError,
+  isPickingLocation,
+  onRequestLocation,
+  onStartPickingLocation,
+  onCancelPickingLocation,
+}) {
   const targetRef = useRef(null);
   const { map } = useMapContext();
   const [toast, setToast] = useState('');
@@ -58,15 +66,50 @@ export default function MapContainer({ isSidebarOpen, locationStatus, locationEr
     };
   }, [map]);
 
+  useEffect(() => {
+    if (!isPickingLocation) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onCancelPickingLocation?.();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPickingLocation, onCancelPickingLocation]);
+
   return (
     <div className="relative h-full w-full">
-      <div ref={targetRef} className="h-full w-full" />
+      <div
+        ref={targetRef}
+        className={`h-full w-full ${isPickingLocation ? 'cursor-crosshair' : ''}`}
+      />
       {map && (
         <MapControls
           isSidebarOpen={isSidebarOpen}
           locationStatus={locationStatus}
+          isPickingLocation={isPickingLocation}
           onRequestLocation={onRequestLocation}
+          onStartPickingLocation={onStartPickingLocation}
+          onCancelPickingLocation={onCancelPickingLocation}
         />
+      )}
+      {isPickingLocation && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute bottom-6 left-1/2 z-30 flex w-[min(92vw,420px)] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)]/95 px-4 py-2.5 text-xs text-[var(--color-text-primary)] shadow-2xl backdrop-blur-sm max-md:bottom-[calc(var(--sheet-h)+12px)]"
+        >
+          <span>Haz clic en cualquier punto del mapa para fijar tu ubicación.</span>
+          <button
+            type="button"
+            onClick={onCancelPickingLocation}
+            className="min-h-11 shrink-0 rounded-xl bg-[var(--color-bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-accent)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
+          >
+            Cancelar
+          </button>
+        </div>
       )}
       {locationError && (
         <div role="alert" className="absolute left-3 right-3 top-16 z-30 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/95 px-3 py-2 text-xs text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm md:hidden">

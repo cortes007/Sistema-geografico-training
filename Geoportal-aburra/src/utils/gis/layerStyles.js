@@ -5,6 +5,7 @@ import {
 } from '../../constants/equipmentTypes';
 import { THEME_COLORS } from '../../constants/themeColors';
 import { getTrainingSpotPoint } from '../trainingSpotGeometry';
+import { hasActiveSmartFilters, matchesSpotFilters } from '../spotFilters';
 
 const styleCache = new Map();
 
@@ -52,10 +53,49 @@ export function createMarkerStyle(color, useRepresentativePoint = false) {
   return style;
 }
 
+/**
+ * Crea un predicado de filtrado inteligente para teselas MVT de training_spots.
+ * Devuelve null cuando no hay filtros inteligentes activos (ruta rápida sin coste por feature).
+ */
+export function createTrainingSpotStylePredicate({
+  spotFilters,
+  spotFilterIndex = {},
+  activeEquipmentTypes = null,
+  now = new Date(),
+} = {}) {
+  if (!hasActiveSmartFilters(spotFilters)) {
+    return null;
+  }
+
+  return (feature) => {
+    const rawId = feature.get('trainingSpotId') ?? feature.get('id') ?? feature.getId();
+    const trainingSpotId = rawId !== undefined && rawId !== null ? String(rawId) : '';
+    const catalogSpot = trainingSpotId ? spotFilterIndex?.spotsById?.get(trainingSpotId) : null;
+
+    return matchesSpotFilters(
+      {
+        trainingSpotId,
+        name: feature.get('name') || catalogSpot?.name || '',
+        city: feature.get('city') || feature.get('addr:city') || catalogSpot?.city || '',
+        equipmentType: feature.get('equipmentType') ?? catalogSpot?.equipmentType ?? null,
+        openingHours:
+          feature.get('opening_hours')
+          || feature.get('openingHours')
+          || catalogSpot?.openingHours
+          || '',
+      },
+      spotFilters,
+      spotFilterIndex,
+      { activeEquipmentTypes, now }
+    );
+  };
+}
+
 export function getFeatureStyle(
   feature,
   activeEquipmentTypes,
-  useRepresentativePoint = false
+  useRepresentativePoint = false,
+  filterPredicate = null
 ) {
   let type = feature.get('equipmentType');
   if (type === undefined) {
@@ -64,11 +104,14 @@ export function getFeatureStyle(
   }
 
   const palette = type ? EQUIPMENT_TYPE_STYLES[type] : null;
+  if (activeEquipmentTypes && palette && !activeEquipmentTypes[type]) {
+    return null;
+  }
+  if (typeof filterPredicate === 'function' && !filterPredicate(feature)) {
+    return null;
+  }
   if (!palette) {
     return createMarkerStyle(THEME_COLORS.muted, useRepresentativePoint);
-  }
-  if (activeEquipmentTypes && !activeEquipmentTypes[type]) {
-    return null;
   }
 
   return createMarkerStyle(palette.color, useRepresentativePoint);

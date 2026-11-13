@@ -7,7 +7,7 @@ import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
 import { Icon, Fill, Stroke, Style } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
-import { NEARBY_SEARCH_RADIUS_METERS } from '../constants/location';
+import { DEFAULT_SEARCH_RADIUS_METERS } from '../constants/location';
 import { centerOnFeature } from '../utils/gis/mapCentering';
 import { THEME_COLORS } from '../constants/themeColors';
 
@@ -54,7 +54,7 @@ function isSatelliteVisible(map) {
 }
 
 export function useLocationOverlay() {
-  const { map, userLocation } = useMapContext();
+  const { map, userLocation, searchRadiusMeters } = useMapContext();
 
   useEffect(() => {
     if (!map) return undefined;
@@ -92,7 +92,8 @@ export function useLocationOverlay() {
 
     const projection = map.getView().getProjection();
     const center = [userLocation.longitude, userLocation.latitude];
-    const radius = circular(center, NEARBY_SEARCH_RADIUS_METERS, 96);
+    const radiusMeters = searchRadiusMeters || DEFAULT_SEARCH_RADIUS_METERS;
+    const radius = circular(center, radiusMeters, 96);
     radius.transform('EPSG:4326', projection);
 
     const radiusFeature = new Feature(radius);
@@ -105,5 +106,5 @@ export function useLocationOverlay() {
     markerSource.addFeature(markerFeature);
 
     centerOnFeature(map, radius.getExtent(), { targetType: 'extent' });
-  }, [map, userLocation]);
+  }, [map, searchRadiusMeters, userLocation]);
 }

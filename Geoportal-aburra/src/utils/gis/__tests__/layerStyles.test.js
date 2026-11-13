@@ -4,6 +4,7 @@ import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import {
   createMarkerStyle,
+  createTrainingSpotStylePredicate,
   getFeatureStyle,
   prepareTrainingSpotFeature,
 } from '../layerStyles';
@@ -78,5 +79,73 @@ describe('layerStyles ($O(1)$ cached styles & MVT feature pre-processing)', () =
     });
 
     expect(hiddenStyle).toBeNull();
+  });
+
+  it('hides features rejected by smart filter predicate while keeping cached Style identity for matching ones', () => {
+    const activeTypes = {
+      'parque de calistenia': true,
+      'gimnasio al aire libre': true,
+      gimnasio: true,
+    };
+    const matchFeature = new Feature({
+      geometry: new Point([1, 1]),
+      id: 'spot-1',
+      name: 'Parque Calistenia Poblado',
+      city: 'Medellín',
+      leisure: 'fitness_station',
+    });
+    const nonMatchFeature = new Feature({
+      geometry: new Point([2, 2]),
+      id: 'spot-2',
+      name: 'Smart Gym Cerrado',
+      city: 'Envigado',
+      leisure: 'fitness_centre',
+    });
+    prepareTrainingSpotFeature(matchFeature);
+    prepareTrainingSpotFeature(nonMatchFeature);
+
+    const predicate = createTrainingSpotStylePredicate({
+      spotFilters: {
+        query: 'poblado',
+        municipality: 'Medellín',
+        minRating: 4.0,
+        onlyWithMeetups: true,
+        onlyOpenNow: true,
+      },
+      spotFilterIndex: {
+        ratingsBySpot: new Map([
+          ['spot-1', { averageRating: 4.6, ratingCount: 8 }],
+          ['spot-2', { averageRating: 4.9, ratingCount: 15 }],
+        ]),
+        upcomingSpotIds: new Set(['spot-1', 'spot-2']),
+      },
+      activeEquipmentTypes: activeTypes,
+    });
+
+    expect(typeof predicate).toBe('function');
+
+    const visibleStyleA = getFeatureStyle(matchFeature, activeTypes, true, predicate);
+    const visibleStyleB = getFeatureStyle(matchFeature, activeTypes, true);
+    const hiddenStyle = getFeatureStyle(nonMatchFeature, activeTypes, true, predicate);
+
+    expect(visibleStyleA).not.toBeNull();
+    expect(visibleStyleA).toBe(visibleStyleB);
+    expect(hiddenStyle).toBeNull();
+  });
+
+  it('returns null predicate when no smart filters are active (fast-path)', () => {
+    const predicate = createTrainingSpotStylePredicate({
+      spotFilters: {
+        query: '',
+        municipality: '',
+        minRating: 0,
+        onlyWithMeetups: false,
+        onlyOpenNow: false,
+      },
+      spotFilterIndex: {},
+      activeEquipmentTypes: { gimnasio: true },
+    });
+
+    expect(predicate).toBeNull();
   });
 });

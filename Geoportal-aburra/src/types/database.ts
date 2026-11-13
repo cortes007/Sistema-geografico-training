@@ -85,9 +85,24 @@ export type CalificacionLugarInsert = Omit<
   'id' | 'fecha_creacion' | 'fecha_actualizacion'
 >;
 
+export type TrainingSpotRow = {
+  id: string;
+  name: string | null;
+  leisure: string | null;
+  description: string | null;
+  city: string | null;
+  geom: unknown;
+};
+
 export type Database = {
   public: {
     Tables: {
+      training_spots: {
+        Row: TrainingSpotRow;
+        Insert: Partial<TrainingSpotRow>;
+        Update: Partial<TrainingSpotRow>;
+        Relationships: [];
+      };
       eventos_quedadas: { Row: EventoRow; Insert: EventoInsert; Update: Partial<EventoInsert>; Relationships: [] };
       asistencias_evento: { Row: AsistenciaRow; Insert: AsistenciaInsert; Update: Partial<AsistenciaInsert>; Relationships: [] };
       calificaciones_lugares: {

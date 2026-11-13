@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Compass, Layers, LocateFixed, LoaderCircle, Minus, Plus } from 'lucide-react';
+import { Compass, Crosshair, Layers, LocateFixed, LoaderCircle, Minus, Plus } from 'lucide-react';
 import { useMapContext } from '../../context/useMapContext';
 import { getAnimationDuration } from '../../utils/gis/mapCentering';
 
 const buttonClassName = 'flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors motion-reduce:transition-none hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]';
 
-export default function MapControls({ isSidebarOpen, locationStatus, onRequestLocation }) {
+export default function MapControls({
+  isSidebarOpen,
+  locationStatus,
+  isPickingLocation,
+  onRequestLocation,
+  onStartPickingLocation,
+  onCancelPickingLocation,
+}) {
   const { map } = useMapContext();
   const compassRef = useRef(null);
   const draggingCompassRef = useRef(false);
@@ -113,6 +120,18 @@ export default function MapControls({ isSidebarOpen, locationStatus, onRequestLo
           {locationStatus === 'loading'
             ? <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin motion-reduce:animate-none" />
             : <LocateFixed aria-hidden="true" className="h-5 w-5" />}
+        </button>
+        <button
+          type="button"
+          onClick={isPickingLocation ? onCancelPickingLocation : onStartPickingLocation}
+          aria-pressed={isPickingLocation}
+          title={isPickingLocation ? 'Cancelar selección de ubicación' : 'Elegir ubicación en el mapa'}
+          aria-label={isPickingLocation ? 'Cancelar selección de ubicación' : 'Elegir ubicación en el mapa'}
+          className={isPickingLocation
+            ? `${buttonClassName} border-white bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent)] hover:text-white`
+            : buttonClassName}
+        >
+          <Crosshair aria-hidden="true" className="h-5 w-5" />
         </button>
         <button
           type="button"

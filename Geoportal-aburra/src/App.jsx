@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft, Route, LoaderCircle } from 'lucide-react';
+import { MapPin, Navigation, ExternalLink, PanelLeftClose, PanelLeftOpen, ArrowLeft, Route, LoaderCircle, Crosshair } from 'lucide-react';
 import { useMapContext } from './context/useMapContext';
 import { MapProvider } from './context/MapContext.jsx';
 import MapContainer from './components/map/MapContainer';
@@ -8,6 +8,7 @@ import EquipmentTypeFilters from './components/sidebar/EquipmentTypeFilters';
 import AuthPanel from './components/auth/AuthPanel';
 import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 import MeetupsPanel from './components/meetups/MeetupsPanel';
+import GlobalMeetupsPanel from './components/meetups/GlobalMeetupsPanel';
 import PlaceRatingsPanel from './components/map/PlaceRatingsPanel';
 import { useUserLocation } from './hooks/useUserLocation';
 import { useDirections } from './hooks/useDirections';
@@ -16,6 +17,8 @@ function PlaceDetailsCard({
   onBack,
   onRequestAuth,
   onGetDirections,
+  onPickLocation,
+  hasUserLocation,
   directionsLoading,
   directionsError,
   route,
@@ -157,7 +160,19 @@ function PlaceDetailsCard({
           </p>
         )}
         {directionsError && (
-          <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{directionsError}</p>
+          <div className="space-y-2">
+            <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{directionsError}</p>
+            {!hasUserLocation && (
+              <button
+                type="button"
+                onClick={onPickLocation}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)] px-3 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-accent)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
+              >
+                <Crosshair aria-hidden="true" className="h-4 w-4" />
+                Elegir mi punto en el mapa
+              </button>
+            )}
+          </div>
         )}
         <PlaceRatingsPanel
           place={{
@@ -184,9 +199,19 @@ function PlaceDetailsCard({
 
 function GeoportalContent() {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState('explore');
   const [authMode, setAuthMode] = useState(null);
   const { selectedPlace, clearSelectedPlace, userLocation, route } = useMapContext();
-  const { status: locationStatus, error: locationError, requestLocation } = useUserLocation();
+  const {
+    status: locationStatus,
+    error: locationError,
+    locationSource,
+    isPickingLocation,
+    requestLocation,
+    startPickingLocation,
+    cancelPickingLocation,
+    clearLocation,
+  } = useUserLocation();
   const {
     getDirections,
     clearDirections,
@@ -275,7 +300,10 @@ function GeoportalContent() {
             isSidebarOpen={isPanelOpen}
             locationStatus={locationStatus}
             locationError={locationError}
+            isPickingLocation={isPickingLocation}
             onRequestLocation={requestLocation}
+            onStartPickingLocation={startPickingLocation}
+            onCancelPickingLocation={cancelPickingLocation}
           />
         </main>
         <AuthPanel mode={authMode} setMode={setAuthMode} />
@@ -313,16 +341,71 @@ function GeoportalContent() {
             </button>
           </div>
           <div className={`mt-4 min-h-0 flex-1 overflow-y-auto pr-1 max-md:mt-0 max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] ${selectedPlace || !isPanelOpen ? 'max-md:block' : 'max-md:hidden'} md:pb-0`}>
-            <PlacesFilterPanel
-              locationStatus={locationStatus}
-              locationError={locationError}
-            />
+            <div
+              role="tablist"
+              aria-label="Secciones del panel lateral"
+              className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] p-1"
+            >
+              <button
+                type="button"
+                role="tab"
+                id="tab-explore"
+                aria-selected={sidebarTab === 'explore'}
+                aria-controls="panel-explore"
+                onClick={() => setSidebarTab('explore')}
+                className={`min-h-10 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
+                  sidebarTab === 'explore'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]'
+                }`}
+              >
+                Explorar
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-meetups"
+                aria-selected={sidebarTab === 'meetups'}
+                aria-controls="panel-meetups"
+                onClick={() => setSidebarTab('meetups')}
+                className={`min-h-10 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
+                  sidebarTab === 'meetups'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)]'
+                }`}
+              >
+                Quedadas próximas
+              </button>
+            </div>
+
+            {sidebarTab === 'explore' ? (
+              <div role="tabpanel" id="panel-explore" aria-labelledby="tab-explore">
+                <PlacesFilterPanel
+                  locationStatus={locationStatus}
+                  locationError={locationError}
+                  locationSource={locationSource}
+                  isPickingLocation={isPickingLocation}
+                  onStartPickingLocation={startPickingLocation}
+                  onCancelPickingLocation={cancelPickingLocation}
+                  onClearLocation={clearLocation}
+                />
+              </div>
+            ) : (
+              <div role="tabpanel" id="panel-meetups" aria-labelledby="tab-meetups">
+                <GlobalMeetupsPanel />
+              </div>
+            )}
             {selectedPlace ? (
               <div ref={selectedDetailsRef} className="mt-3 shrink-0 scroll-mt-3">
                 <PlaceDetailsCard
                   onBack={clearSelectedPlace}
                   onRequestAuth={() => setAuthMode('login')}
                   onGetDirections={handleGetDirections}
+                  onPickLocation={() => {
+                    setDirectionsError('');
+                    startPickingLocation();
+                  }}
+                  hasUserLocation={Boolean(userLocation)}
                   directionsLoading={directionsLoading || resolvingLocation}
                   directionsError={directionsError}
                   route={route?.destinationKey === selectedPlaceKey ? route : null}

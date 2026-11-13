@@ -1,7 +1,9 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { EQUIPMENT_TYPES } from '../constants/equipmentTypes';
+import { DEFAULT_SEARCH_RADIUS_METERS } from '../constants/location';
 import { getAnimationDuration } from '../utils/gis/mapCentering';
+import { DEFAULT_SPOT_FILTERS } from '../utils/spotFilters';
 import { MapContext } from './mapContext';
 
 export function MapProvider({ children }) {
@@ -11,6 +13,16 @@ export function MapProvider({ children }) {
   const [capturedCoord, setCapturedCoord] = useState(null); // [x, y] en EPSG:3857
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [userLocation, setUserLocation] = useState(null); // { latitude, longitude } en EPSG:4326
+  const [locationStatus, setLocationStatus] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
+  const [locationError, setLocationError] = useState('');
+  const [locationSource, setLocationSource] = useState(null); // null | 'gps' | 'manual'
+  const [isPickingLocation, setIsPickingLocation] = useState(false);
+  const [searchRadiusMeters, setSearchRadiusMeters] = useState(DEFAULT_SEARCH_RADIUS_METERS);
+  const [spotFilters, setSpotFilters] = useState(DEFAULT_SPOT_FILTERS);
+  const [spotFilterIndex, setSpotFilterIndex] = useState(() => ({
+    ratingsBySpot: new Map(),
+    upcomingSpotIds: new Set(),
+  }));
   const [route, setRoute] = useState(null); // GeoJSON coordinates en EPSG:4326
   const [ratingsVersion, setRatingsVersion] = useState(0);
   const [trainingSpotsError, setTrainingSpotsError] = useState('');
@@ -110,6 +122,10 @@ export function MapProvider({ children }) {
     setRatingsVersion((version) => version + 1);
   }, []);
 
+  const resetSpotFilters = useCallback(() => {
+    setSpotFilters(DEFAULT_SPOT_FILTERS);
+  }, []);
+
   const value = useMemo(
     () => ({
       map,
@@ -127,6 +143,21 @@ export function MapProvider({ children }) {
       clearSelectedPlace,
       userLocation,
       setUserLocation,
+      locationStatus,
+      setLocationStatus,
+      locationError,
+      setLocationError,
+      locationSource,
+      setLocationSource,
+      isPickingLocation,
+      setIsPickingLocation,
+      searchRadiusMeters,
+      setSearchRadiusMeters,
+      spotFilters,
+      setSpotFilters,
+      resetSpotFilters,
+      spotFilterIndex,
+      setSpotFilterIndex,
       route,
       setRoute,
       clearRoute,
@@ -148,6 +179,14 @@ export function MapProvider({ children }) {
       selectedPlace,
       clearSelectedPlace,
       userLocation,
+      locationStatus,
+      locationError,
+      locationSource,
+      isPickingLocation,
+      searchRadiusMeters,
+      spotFilters,
+      resetSpotFilters,
+      spotFilterIndex,
       route,
       clearRoute,
       ratingsVersion,

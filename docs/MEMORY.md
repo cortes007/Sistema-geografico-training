@@ -10,13 +10,13 @@ El rediseño responsive, sus decisiones visuales y el checklist de accesibilidad
 
 ## Ubicación, lugares cercanos y rutas
 
-El botón **Ubicación actual** solicita permiso del navegador y centra el mapa en una ubicación aproximada con un radio visual de 3 km. Si se deniega el permiso, el dispositivo no puede determinar la posición o la consulta vence, el geoportal muestra un mensaje con la causa y sugerencias para volver a intentarlo o habilitar el permiso en los ajustes del navegador y del dispositivo.
+El botón **Ubicación actual** solicita permiso del navegador y centra el mapa en una ubicación aproximada con un radio visual inicial de **1 km** (`DEFAULT_SEARCH_RADIUS_METERS = 1000` m), ajustable en el panel lateral entre **1 km**, **3 km** y **5 km** (`SEARCH_RADIUS_OPTIONS`) una vez hay una ubicación activa. Si se deniega el permiso, el dispositivo no puede determinar la posición o la consulta vence, el geoportal muestra un mensaje con la causa y habilita en el sidebar el acceso alternativo **Elegir mi punto en el mapa** (`getSidebarLocationControls`).
 
 La geolocalización requiere un contexto seguro: abre el sitio con HTTPS (localhost también está permitido) y evita navegadores internos de aplicaciones, que pueden bloquear o limitar el permiso. Si el navegador pregunta, permite el acceso a la ubicación para este sitio.
 
-La alternativa manual **Elegir ubicación en el mapa** se contempla para los casos en que no se conceda el permiso. Actualmente no está disponible como control de ubicación: hacer clic en el mapa permite capturar coordenadas o seleccionar un lugar, pero no establece la ubicación del usuario ni sustituye el botón **Ubicación actual**.
+La alternativa manual **Elegir mi punto en el mapa** está disponible de forma permanente en `MapControls.jsx` (botón de mira), desde el aviso de **"Cómo llegar"** y automáticamente en el sidebar cuando falla la geolocalización. Al hacer clic en el mapa en modo selección (`isPickingLocation`), `useClickMarker.js` convierte la coordenada a `EPSG:4326`, asigna `userLocation` (`locationSource = 'manual'`), desactiva el modo selección y habilita el cálculo de lugares cercanos y rutas peatonales sin seleccionar spots ni colocar marcador neutro.
 
-El sidebar muestra hasta tres lugares calificados del radio, ordenados por una media bayesiana que considera tanto el promedio como la cantidad de opiniones y respeta los filtros de tipo activos. Los lugares sin calificaciones no entran en el ranking.
+El sidebar muestra hasta tres lugares calificados del radio seleccionado (`1 km`, `3 km` o `5 km`), ordenados por una media bayesiana que considera tanto el promedio como la cantidad de opiniones, aplicando los filtros de tipo e inteligentes activos y recargando automáticamente cuando las teselas MVT externas terminan de descargarse (`scanNearbyTileFeatures`). Los lugares sin calificaciones no entran en el ranking.
 
 Para habilitar el ranking en Supabase, ejecuta [`sql/lugares_cercanos_mejor_calificados.sql`](../sql/lugares_cercanos_mejor_calificados.sql) después de crear `public.calificaciones_lugares` con el script anterior. El script agrega `training_spot_id`, intenta asociar opiniones históricas por nombre, tipo y cercanía de hasta 30 m y crea la RPC `listar_calificaciones_agregadas_lugares`. Solo se devuelven promedios y recuentos agregados; el filtrado geográfico y la distancia se calculan en el navegador, por lo que la ubicación del usuario no se envía a Supabase.
 
@@ -59,7 +59,7 @@ La API responde con `coordinates` como pares `[longitud, latitud]`, `distanceMet
 `routingService.js` captura excepciones de conexión (`TypeError: Failed to fetch`) y códigos de estado HTTP de indisponibilidad temporal (502, 503, 504), devolviendo mensajes claros y localizados en español. En la interfaz (`App.jsx`), si el usuario pulsa **Cómo llegar** sin ubicación establecida y la geolocalización no se concede o falla, la tarjeta de detalle muestra la alerta: *"Debes conceder acceso a tu ubicación actual para calcular la ruta peatonal."*, evitando botones inertes.
 
 ### Pruebas Automatizadas
-- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (`20` pruebas unitarias en `6` suites cubriendo `routingService`, `placeDetails`, `layerStyles`, `useNearbyPlaces`, `eventosService` y `getPlacePhoto`).
+- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (`63` pruebas unitarias en `14` archivos cubriendo `routingService`, `trainingSpotsService`, `eventosService`, `placeDetails`, `layerStyles`, `spotGeometryParser`, `openingHours`, `spotFilters`, `locationPanelState`, `useUserLocation`, `useNearbyPlaces`, `useSpotSearch`, `useGlobalMeetups` y `getPlacePhoto`).
 - **Backend:** Ejecuta `npm test --prefix backend` para correr la suite con el test runner nativo de Node.js (`19` pruebas en `routeServer.test.js` + pruebas de validación/normalización/exportación cubriendo timeout 504, 502, 404 NoRoute, rate limiting y caché LRU en memoria).
 
 El backend aplica un rate limit por IP con ventana fija: `RATE_LIMIT_MAX` define el máximo de solicitudes por IP (por defecto `30`) y `RATE_LIMIT_WINDOW_MS` la duración de la ventana (por defecto `60000` ms). Al excederlo responde HTTP 429 con `Retry-After`. La IP se toma de la conexión (`req.socket.remoteAddress`); solo se usa el primer valor de `X-Forwarded-For` cuando `TRUST_PROXY=true`. Las entradas expiradas se limpian periódicamente.
@@ -85,6 +85,19 @@ Las rutas exitosas se guardan en una caché **LRU (Least Recently Used)** en mem
    - `addLayer` y `removeLayer` mantienen referencias estables en `MapContext.jsx` apoyándose en `useRef`.
    - `getPlacePhoto.js` indexa `photoCache` por clave estable (`getFeatureCacheKey`) con timeout externo de `1800 ms`.
    - `routeServer.js` promueve las entradas consultadas en `routeCache` para garantizar expulsión LRU real en $O(1)$.
+
+### Ubicación Manual, Buscador/Filtros Inteligentes y Agenda Global (2026-11-13)
+1. **Ubicación manual y selector de radio (`useUserLocation.js`, `useClickMarker.js`, `useLocationOverlay.js`, `useNearbyPlaces.js`, `locationPanelState.js`):**
+   - `MapContext.jsx` gestiona `locationSource` (`'gps' | 'manual'`), `isPickingLocation` y `searchRadiusMeters` (iniciando en `1000` m con opciones `1000`, `3000`, `5000`).
+   - `PlacesFilterPanel.jsx` muestra el botón manual en el sidebar solo ante fallo de geolocalización y el selector de radio `1 km / 3 km / 5 km` únicamente cuando la ubicación está lista (`locationStatus === 'ready'`).
+   - `scanNearbyTileFeatures` detecta teselas MVT externas pendientes y se suscribe directamente a su evento `'change'` para recalcular lugares al cambiar el radio sin requerir nuevo clic en el mapa.
+2. **Buscador global y filtros inteligentes sincronizados con capa MVT (`trainingSpotsService.ts`, `spotFilters.js`, `openingHours.js`, `useSpotSearch.js`, `SpotSearchPanel.jsx`, `layerStyles.js`, `useTrainingSpotsLayer.js`):**
+   - `listarTrainingSpots()` cachea el catálogo de `public.training_spots` decodificando GeoJSON/EWKB (`spotGeometryParser.js`) a `EPSG:4326`.
+   - `matchesSpotFilters()` aplica búsqueda normalizada sin tildes/mayúsculas, municipio (`ABURRA_MUNICIPALITIES`), calificación mínima (`≥ 3.0 / 4.0 / 4.5`), `"Con quedadas próximas"` y `"Abierto ahora"` (tratando parques al aire libre sin `opening_hours` como 24/7).
+   - `createTrainingSpotStylePredicate` y `getFeatureStyle` ocultan en el mapa los marcadores que no cumplen los filtros activos manteniendo las referencias cacheadas de `Style` ($O(1)$).
+3. **Agenda global de "Quedadas próximas" (`useGlobalMeetups.js`, `GlobalMeetupsPanel.jsx`, `App.jsx`):**
+   - El panel lateral expone las pestañas `Explorar` y `Quedadas próximas`.
+   - `useGlobalMeetups` consulta `listarEventosProximos()` y `listarInscripcionesUsuario()` en lote cuando hay sesión activa, ordena cronológicamente y permite centrar el mapa, sincronizar el pin de selección y abrir `PlaceDetailsCard` decodificando `event.geom`.
 
 ## Estructura del proyecto
 

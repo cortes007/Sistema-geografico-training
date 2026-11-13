@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Circle as CircleStyle, Fill, Icon, Stroke, Style } from 'ol/style';
-import { toLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import { useMapContext } from '../context/useMapContext';
+import { useUserLocation } from './useUserLocation';
 import { extractPlaceData } from '../utils/placeDetails';
 import { getTrainingSpotPoint } from '../utils/trainingSpotGeometry';
 import { centerOnFeature } from '../utils/gis/mapCentering';
@@ -27,6 +28,14 @@ const selectionStyle = new Style({
     scale: 0.8,
   }),
 });
+
+/**
+ * Convierte una coordenada de clic en el mapa (por defecto EPSG:3857) a EPSG:4326.
+ */
+export function resolveMapClickCoordinate(coordinate, projection = 'EPSG:3857') {
+  const [longitude, latitude] = toLonLat(coordinate, projection);
+  return { latitude, longitude };
+}
 
 function findTrainingSpotNearPixel(map, pixel) {
   const tolerance = 10;
@@ -71,13 +80,32 @@ function findTrainingSpotNearPixel(map, pixel) {
 }
 
 export function useClickMarker() {
-  const { map, setSelectedPlace, clearSelectedPlace } = useMapContext();
+  const {
+    map,
+    selectedPlace,
+    setSelectedPlace,
+    clearSelectedPlace,
+    isPickingLocation,
+  } = useMapContext();
+  const { setManualLocation } = useUserLocation();
+  const isPickingLocationRef = useRef(isPickingLocation);
+  const setManualLocationRef = useRef(setManualLocation);
+  const markerFeatureRef = useRef(null);
 
   useEffect(() => {
-    if (!map) return;
+    isPickingLocationRef.current = isPickingLocation;
+  }, [isPickingLocation]);
+
+  useEffect(() => {
+    setManualLocationRef.current = setManualLocation;
+  }, [setManualLocation]);
+
+  useEffect(() => {
+    if (!map) return undefined;
 
     const markerFeature = new Feature();
     markerFeature.set('isSelectionMarker', true);
+    markerFeatureRef.current = markerFeature;
     const source = new VectorSource({ features: [markerFeature] });
     const markerLayer = new VectorLayer({
       source,
@@ -87,6 +115,15 @@ export function useClickMarker() {
     map.addLayer(markerLayer);
 
     const handleClick = (event) => {
+      if (isPickingLocationRef.current) {
+        const picked = resolveMapClickCoordinate(
+          event.coordinate,
+          map.getView().getProjection()
+        );
+        setManualLocationRef.current(picked);
+        return;
+      }
+
       let foundFeature = null;
 
       map.forEachFeatureAtPixel(event.pixel, (feature) => {
@@ -102,7 +139,7 @@ export function useClickMarker() {
       if (!foundFeature) foundFeature = findTrainingSpotNearPixel(map, event.pixel);
 
       if (!foundFeature) {
-        // No feature clicked, show black marker at click location
+        // No feature clicked, show neutral marker at click location
         markerFeature.setGeometry(new Point(event.coordinate));
         markerFeature.set('isSelectionMarker', false);
         clearSelectedPlace();
@@ -147,6 +184,32 @@ export function useClickMarker() {
       map.un('singleclick', handleClick);
       map.removeLayer(markerLayer);
       source.clear();
+      markerFeatureRef.current = null;
     };
   }, [clearSelectedPlace, map, setSelectedPlace]);
+
+  useEffect(() => {
+    const markerFeature = markerFeatureRef.current;
+    if (!map || !markerFeature) return;
+
+    if (!selectedPlace) {
+      if (markerFeature.get('isSelectionMarker')) {
+        markerFeature.setGeometry(null);
+      }
+      return;
+    }
+
+    if (
+      Number.isFinite(selectedPlace.longitude)
+      && Number.isFinite(selectedPlace.latitude)
+    ) {
+      const projection = map.getView().getProjection();
+      const projected = fromLonLat(
+        [selectedPlace.longitude, selectedPlace.latitude],
+        projection
+      );
+      markerFeature.setGeometry(new Point(projected));
+      markerFeature.set('isSelectionMarker', true);
+    }
+  }, [map, selectedPlace]);
 }

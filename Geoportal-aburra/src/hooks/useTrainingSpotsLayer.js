@@ -1,10 +1,11 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import Feature from 'ol/Feature';
 import MVT from 'ol/format/MVT';
 import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorTileSource from 'ol/source/VectorTile';
 import { useMapContext } from '../context/useMapContext';
 import {
+  createTrainingSpotStylePredicate,
   getFeatureStyle,
   prepareTrainingSpotFeature,
 } from '../utils/gis/layerStyles';
@@ -53,19 +54,43 @@ export function loadTrainingSpotsTile(tile, url) {
 }
 
 export function useTrainingSpotsLayer() {
-  const { map, addLayer, layers, activeEquipmentTypes } = useMapContext();
+  const {
+    map,
+    addLayer,
+    layers,
+    activeEquipmentTypes,
+    spotFilters,
+    spotFilterIndex,
+  } = useMapContext();
+
+  const filterPredicate = useMemo(
+    () =>
+      createTrainingSpotStylePredicate({
+        spotFilters,
+        spotFilterIndex,
+        activeEquipmentTypes,
+      }),
+    [activeEquipmentTypes, spotFilterIndex, spotFilters]
+  );
+
+  const initialStyleConfigRef = useRef({ activeEquipmentTypes, filterPredicate });
+  useEffect(() => {
+    initialStyleConfigRef.current = { activeEquipmentTypes, filterPredicate };
+  }, [activeEquipmentTypes, filterPredicate]);
 
   useEffect(() => {
     layers.forEach(({ olLayer, name }) => {
+      const isTrainingSpots = name === 'training_spots';
       olLayer.setStyle((feature) =>
         getFeatureStyle(
           feature,
           activeEquipmentTypes,
-          name === 'training_spots'
+          isTrainingSpots,
+          isTrainingSpots ? filterPredicate : null
         )
       );
     });
-  }, [layers, activeEquipmentTypes]);
+  }, [layers, activeEquipmentTypes, filterPredicate]);
 
   const loadTrainingSpots = useCallback(() => {
     if (!map) {
@@ -83,7 +108,13 @@ export function useTrainingSpotsLayer() {
     });
     const olLayer = new VectorTileLayer({
       source,
-      style: (feature) => getFeatureStyle(feature, activeEquipmentTypes, true),
+      style: (feature) =>
+        getFeatureStyle(
+          feature,
+          initialStyleConfigRef.current.activeEquipmentTypes,
+          true,
+          initialStyleConfigRef.current.filterPredicate
+        ),
       minZoom: 0,
       maxZoom: 22,
       renderMode: 'vector',
@@ -102,7 +133,7 @@ export function useTrainingSpotsLayer() {
       rawGeojson: null,
       visible: true,
     });
-  }, [map, addLayer, activeEquipmentTypes]);
+  }, [map, addLayer]);
 
   return { loadTrainingSpots };
 }
