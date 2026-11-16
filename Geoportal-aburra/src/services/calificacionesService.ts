@@ -13,6 +13,7 @@ export type LugarCalificable = {
 export type CalificacionLugarInput = {
   calificacion: number;
   comentario: string;
+  componentes?: Record<string, number>;
 };
 
 function buildPlaceKey(lugar: LugarCalificable): string {
@@ -95,6 +96,42 @@ export async function guardarCalificacionLugar(
     comentario: comentario || null,
   };
 
+  const validComponentEntries = Object.entries(input.componentes ?? {}).filter(
+    ([componente, puntaje]) =>
+      componente.trim().length > 0 && Number.isInteger(puntaje) && puntaje >= 1 && puntaje <= 5,
+  );
+
+  if (lugar.trainingSpotId && validComponentEntries.length > 0) {
+    const { data: savedRow, error } = await supabase
+      .from('calificaciones_lugares')
+      .upsert(calificacion, { onConflict: 'lugar_key,usuario_id' })
+      .select('id')
+      .single();
+
+    if (error) {
+      throwSupabaseError('No se pudo guardar la calificación', error);
+    }
+
+    const componentRows = validComponentEntries.map(([componente, puntaje]) => ({
+      calificacion_id: savedRow.id,
+      training_spot_id: lugar.trainingSpotId as string,
+      componente: componente.trim(),
+      puntaje,
+    }));
+
+    const { error: componentsError } = await supabase
+      .from('calificaciones_componentes')
+      .upsert(componentRows, { onConflict: 'calificacion_id,componente' });
+
+    if (componentsError) {
+      throwSupabaseError(
+        'La calificación se guardó, pero no se pudieron guardar los puntajes de componentes',
+        componentsError,
+      );
+    }
+    return;
+  }
+
   const { error } = await supabase
     .from('calificaciones_lugares')
     .upsert(calificacion, { onConflict: 'lugar_key,usuario_id' });
@@ -102,4 +139,23 @@ export async function guardarCalificacionLugar(
   if (error) {
     throwSupabaseError('No se pudo guardar la calificación', error);
   }
+}
+
+export async function listarComponentesCalificacionUsuario(
+  calificacionId: string,
+): Promise<Record<string, number>> {
+  const id = assertNonEmpty(calificacionId, 'La calificación');
+  const { data, error } = await supabase
+    .from('calificaciones_componentes')
+    .select('componente, puntaje')
+    .eq('calificacion_id', id);
+
+  if (error) {
+    throwSupabaseError('No se pudieron cargar los componentes calificados', error);
+  }
+
+  return (data ?? []).reduce<Record<string, number>>((acc, row) => {
+    acc[row.componente] = row.puntaje;
+    return acc;
+  }, {});
 }

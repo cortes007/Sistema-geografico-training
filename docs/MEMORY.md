@@ -27,6 +27,7 @@ La base de datos de Supabase (`agxaidzgnbgnzihefbdf`) mantiene migraciones versi
 1. `20261112220341_baseline_social_rls_snapshot.sql`: Snapshot base previo al endurecimiento de seguridad.
 2. `20261112223104_rls_and_schema_hardening.sql`: Endurecimiento de esquema (`fecha_hora_fin` nullable en `eventos_quedadas`, `CHECK` de rango de fechas y longitud de `titulo`/`descripcion`), habilitación de RLS + `REVOKE ALL` en `public.schema_migrations`, revocación de privilegios excesivos en `public`, políticas RLS optimizadas con `(select auth.uid())` y `WITH CHECK` explícito, eliminación del índice duplicado `training_spots_geom_idx` e índice `idx_eventos_quedadas_training_spot_id`.
 3. `20261112225647_functions_security_hardening.sql`: Creación del esquema `private` (no expuesto por PostgREST) y del helper `private.contar_asistentes_evento(uuid)`, fijación de `SET search_path = ''` en las funciones `public`, endurecimiento del trigger `public.crear_perfil_usuario()` con fallback seguro a `'principiante'` y revocación de `EXECUTE` para `PUBLIC`/`anon`/`authenticated`, y eliminación de la función obsoleta `public.buscar_eventos_proximos(double precision, double precision, double precision)`.
+4. `20261116153000_spot_insights_and_component_quality.sql`: Creación de `public.spot_enlaces` y `public.calificaciones_componentes`, políticas RLS con `(select auth.uid())` y RPC `listar_resumen_componentes_spot` (con recarga del schema cache de PostgREST).
 
 Los scripts de referencia en [`sql/functions.sql`](../sql/functions.sql), [`sql/calificaciones_lugares.sql`](../sql/calificaciones_lugares.sql), [`sql/lugares_cercanos_mejor_calificados.sql`](../sql/lugares_cercanos_mejor_calificados.sql) y [`backend/migrations/003_tables.sql`](../backend/migrations/003_tables.sql) se mantienen sincronizados con estas definiciones.
 
@@ -59,7 +60,7 @@ La API responde con `coordinates` como pares `[longitud, latitud]`, `distanceMet
 `routingService.js` captura excepciones de conexión (`TypeError: Failed to fetch`) y códigos de estado HTTP de indisponibilidad temporal (502, 503, 504), devolviendo mensajes claros y localizados en español. En la interfaz (`App.jsx`), si el usuario pulsa **Cómo llegar** sin ubicación establecida y la geolocalización no se concede o falla, la tarjeta de detalle muestra la alerta: *"Debes conceder acceso a tu ubicación actual para calcular la ruta peatonal."*, evitando botones inertes.
 
 ### Pruebas Automatizadas
-- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (`63` pruebas unitarias en `14` archivos cubriendo `routingService`, `trainingSpotsService`, `eventosService`, `placeDetails`, `layerStyles`, `spotGeometryParser`, `openingHours`, `spotFilters`, `locationPanelState`, `useUserLocation`, `useNearbyPlaces`, `useSpotSearch`, `useGlobalMeetups` y `getPlacePhoto`).
+- **Frontend:** Ejecuta `npm test --prefix Geoportal-aburra` para correr la suite con Vitest (`79` pruebas unitarias en `20` archivos cubriendo `routingService`, `trainingSpotsService`, `eventosService`, `calificacionesService`, `spotInsightsService`, `placeDetails`, `spotLinks`, `componentQuality`, `PlaceRatingsPanel`, `layerStyles`, `spotGeometryParser`, `openingHours`, `spotFilters`, `locationPanelState`, `useUserLocation`, `useNearbyPlaces`, `useSpotSearch`, `useGlobalMeetups`, `useSpotInsights` y `getPlacePhoto`).
 - **Backend:** Ejecuta `npm test --prefix backend` para correr la suite con el test runner nativo de Node.js (`19` pruebas en `routeServer.test.js` + pruebas de validación/normalización/exportación cubriendo timeout 504, 502, 404 NoRoute, rate limiting y caché LRU en memoria).
 
 El backend aplica un rate limit por IP con ventana fija: `RATE_LIMIT_MAX` define el máximo de solicitudes por IP (por defecto `30`) y `RATE_LIMIT_WINDOW_MS` la duración de la ventana (por defecto `60000` ms). Al excederlo responde HTTP 429 con `Retry-After`. La IP se toma de la conexión (`req.socket.remoteAddress`); solo se usa el primer valor de `X-Forwarded-For` cuando `TRUST_PROXY=true`. Las entradas expiradas se limpian periódicamente.
@@ -98,6 +99,17 @@ Las rutas exitosas se guardan en una caché **LRU (Least Recently Used)** en mem
 3. **Agenda global de "Quedadas próximas" (`useGlobalMeetups.js`, `GlobalMeetupsPanel.jsx`, `App.jsx`):**
    - El panel lateral expone las pestañas `Explorar` y `Quedadas próximas`.
    - `useGlobalMeetups` consulta `listarEventosProximos()` y `listarInscripcionesUsuario()` en lote cuando hay sesión activa, ordena cronológicamente y permite centrar el mapa, sincronizar el pin de selección y abrir `PlaceDetailsCard` decodificando `event.geom`.
+
+### Enlaces Web y Calidad de Componentes (2026-11-16)
+1. **Enlaces web seguros (`spotLinks.js`, `placeDetails.js`, `spotInsightsService.ts`, `SpotLinksBar.jsx`):**
+   - `extractPlaceData` captura tags OSM (`website`, `contact:website`, `url`, `contact:instagram`) y `resolveSpotLinks` combina fuentes priorizando `public.spot_enlaces`.
+   - `sanitizeExternalUrl` y `normalizeInstagramUrl` bloquean esquemas inseguros (`javascript:`, `data:`, etc.) antes de renderizar `<a target="_blank" rel="noopener noreferrer">`.
+   - Usuarios autenticados pueden sugerir o actualizar enlaces comunitarios validados por constraint `^https?://`.
+2. **Calidad de componentes (`componentQuality.js`, `calificacionesService.ts`, `PlaceRatingsPanel.jsx`):**
+   - `getComponentCriteriaForPlace` diferencia criterios entre parques/calistenia al aire libre (`estado_barras`, `superficie_suelo`, `iluminacion_seguridad`) y gimnasios/centros deportivos (`calidad_maquinas`, `variedad_pesas`, `limpieza_vestier`).
+   - `guardarCalificacionLugar` sincroniza puntajes opcionales (`1..5`) en `public.calificaciones_componentes`, y `listar_resumen_componentes_spot` retorna promedios agregados por componente.
+   - En el formulario de `PlaceRatingsPanel.jsx`, la sección `Calidad de instalaciones (opcional)` se presenta como un desplegable colapsado por defecto (`aria-expanded="false"`) para no mostrarse directamente al calificar.
+   - La funcionalidad de horarios pico (`PeakHoursPanel.jsx`, `peakHours.js` y sus llamadas en `useSpotInsights.js` / `spotInsightsService.ts`) fue retirada de la interfaz y lógica activa del frontend.
 
 ## Estructura del proyecto
 

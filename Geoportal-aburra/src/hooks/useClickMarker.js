@@ -164,6 +164,7 @@ export function useClickMarker() {
         ...basePlace,
         id: trainingSpotId || basePlace.id,
         feature: foundFeature,
+        equipmentType: foundFeature.get('equipmentType') || null,
         openingHours: foundFeature.get('opening_hours') || foundFeature.get('openingHours') || '',
         type: basePlace.type || 'Lugar deportivo',
         coordinates: [Number(lon.toFixed(6)), Number(lat.toFixed(6))],

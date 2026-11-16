@@ -36,6 +36,8 @@ export function extractPlaceData(feature) {
     type,
     description: getPropertyValue(properties, ['description', 'note']),
     city: getPropertyValue(properties, ['city', 'addr:city']),
+    website: getPropertyValue(properties, ['website', 'contact:website', 'url']),
+    instagram: getPropertyValue(properties, ['contact:instagram', 'instagram']),
     coordinates: Array.isArray(coords) && coords.length >= 2 ? [coords[0], coords[1]] : [null, null],
     longitude: Array.isArray(coords) && coords.length >= 2 ? coords[0] : null,
     latitude: Array.isArray(coords) && coords.length >= 2 ? coords[1] : null,

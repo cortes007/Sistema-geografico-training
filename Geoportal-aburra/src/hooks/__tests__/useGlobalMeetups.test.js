@@ -90,6 +90,7 @@ describe('useGlobalMeetups helpers', () => {
       trainingSpotId: 'spot-envigado',
       name: 'Parque Polideportivo Sur',
       type: 'fitness_station',
+      equipmentType: 'gimnasio al aire libre',
       description: 'Zona de calistenia',
       city: 'Envigado',
       coordinates: [-75.591234, 6.168432],

@@ -6,6 +6,7 @@ import {
   listarEventosProximos,
   listarInscripcionesUsuario,
 } from '../services/eventosService';
+import { getEquipmentTypeFromProperties } from '../constants/equipmentTypes';
 import { centerOnFeature } from '../utils/gis/mapCentering';
 import { parseSpotGeometryToLonLat } from '../utils/gis/spotGeometryParser';
 
@@ -39,6 +40,11 @@ export function resolveMeetupTargetPlace(event) {
     trainingSpotId,
     name: event.lugarNombre || event.titulo || 'Lugar deportivo',
     type: event.lugarTipo || 'Lugar deportivo',
+    equipmentType: getEquipmentTypeFromProperties({
+      name: event.lugarNombre,
+      leisure: event.lugarTipo,
+      description: event.lugarDescripcion,
+    }),
     description: event.lugarDescripcion || '',
     city: event.ciudad || '',
     coordinates: [longitude, latitude],

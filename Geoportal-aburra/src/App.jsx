@@ -10,6 +10,9 @@ import { getPlacePhoto } from './utils/gis/getPlacePhoto';
 import MeetupsPanel from './components/meetups/MeetupsPanel';
 import GlobalMeetupsPanel from './components/meetups/GlobalMeetupsPanel';
 import PlaceRatingsPanel from './components/map/PlaceRatingsPanel';
+import SpotLinksBar from './components/map/SpotLinksBar';
+import { useAuth } from './hooks/useAuth';
+import { useSpotInsights } from './hooks/useSpotInsights';
 import { useUserLocation } from './hooks/useUserLocation';
 import { useDirections } from './hooks/useDirections';
 
@@ -24,6 +27,11 @@ function PlaceDetailsCard({
   route,
 }) {
   const { selectedPlace } = useMapContext();
+  const { user } = useAuth();
+  const {
+    links,
+    saveLinks,
+  } = useSpotInsights(selectedPlace);
   const [{ loading, photo }, setPhotoState] = useState({
     loading: Boolean(selectedPlace),
     photo: null,
@@ -126,6 +134,14 @@ function PlaceDetailsCard({
           <span>{selectedPlace.latitude}, {selectedPlace.longitude}</span>
         </div>
 
+        <SpotLinksBar
+          trainingSpotId={selectedPlace.trainingSpotId}
+          links={links}
+          user={user}
+          onSaveLinks={saveLinks}
+          onRequestAuth={onRequestAuth}
+        />
+
         <button
           type="button"
           onClick={onGetDirections}
@@ -178,6 +194,7 @@ function PlaceDetailsCard({
           place={{
             name: selectedPlace.name,
             type: selectedPlace.type,
+            equipmentType: selectedPlace.equipmentType,
             latitude: selectedPlace.latitude,
             longitude: selectedPlace.longitude,
             trainingSpotId: selectedPlace.trainingSpotId,
@@ -187,8 +204,8 @@ function PlaceDetailsCard({
         <MeetupsPanel
           spotId={String(
             selectedPlace.trainingSpotId
-              ?? selectedPlace.feature.get('id')
-              ?? selectedPlace.feature.getId()
+              ?? selectedPlace.feature?.get('id')
+              ?? selectedPlace.feature?.getId()
               ?? ''
           )}
         />

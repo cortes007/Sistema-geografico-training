@@ -94,6 +94,34 @@ export type TrainingSpotRow = {
   geom: unknown;
 };
 
+export type SpotEnlaceRow = {
+  id: UUID;
+  training_spot_id: string;
+  website_url: string | null;
+  instagram_url: string | null;
+  fuente: 'osm' | 'oficial' | 'comunidad';
+  actualizado_por: UUID | null;
+  fecha_actualizacion: string;
+};
+
+export type SpotEnlaceInsert = Omit<SpotEnlaceRow, 'id' | 'fecha_actualizacion'>;
+
+export type CalificacionComponenteRow = {
+  id: UUID;
+  calificacion_id: UUID;
+  training_spot_id: string;
+  componente: string;
+  puntaje: number;
+};
+
+export type CalificacionComponenteInsert = Omit<CalificacionComponenteRow, 'id'>;
+
+export type ResumenComponenteRow = {
+  componente: string;
+  promedio: number;
+  cantidad: number;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -109,6 +137,18 @@ export type Database = {
         Row: CalificacionLugarRow;
         Insert: CalificacionLugarInsert;
         Update: Partial<CalificacionLugarInsert>;
+        Relationships: [];
+      };
+      spot_enlaces: {
+        Row: SpotEnlaceRow;
+        Insert: SpotEnlaceInsert;
+        Update: Partial<SpotEnlaceInsert>;
+        Relationships: [];
+      };
+      calificaciones_componentes: {
+        Row: CalificacionComponenteRow;
+        Insert: CalificacionComponenteInsert;
+        Update: Partial<CalificacionComponenteInsert>;
         Relationships: [];
       };
     };
@@ -130,6 +170,10 @@ export type Database = {
           rating_count: number;
           ranking_rating: number;
         }[];
+      };
+      listar_resumen_componentes_spot: {
+        Args: { training_spot_id_param: string };
+        Returns: ResumenComponenteRow[];
       };
       confirmar_asistencia: {
         Args: { evento_id_param: UUID };

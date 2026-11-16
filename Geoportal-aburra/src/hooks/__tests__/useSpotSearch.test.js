@@ -171,6 +171,7 @@ describe('useSpotSearch pure helpers', () => {
       trainingSpotId: 'spot-1',
       name: 'Parque Calistenia Ciudad del Río',
       type: 'fitness_station',
+      equipmentType: 'gimnasio al aire libre',
       description: 'Barras y paralelas',
       city: 'Medellín',
       coordinates: [-75.575, 6.224],

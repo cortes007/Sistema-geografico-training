@@ -367,12 +367,15 @@ export function useNearbyPlaces() {
       id: place.trainingSpotId,
       name: place.name,
       type: place.type || 'Lugar deportivo',
+      equipmentType: place.feature?.get('equipmentType') || null,
       coordinates: [place.longitude, place.latitude],
       longitude: place.longitude,
       latitude: place.latitude,
       trainingSpotId: place.trainingSpotId,
       feature: place.feature,
       openingHours: place.feature.get('opening_hours') || place.feature.get('openingHours') || '',
+      website: place.feature?.get('website') || place.feature?.get('contact:website') || place.feature?.get('url') || '',
+      instagram: place.feature?.get('contact:instagram') || place.feature?.get('instagram') || '',
     });
   }, [map, setSelectedPlace]);
 

@@ -86,6 +86,7 @@ export function buildSelectedPlaceFromSpot(spot) {
     trainingSpotId: spot.trainingSpotId,
     name: spot.name,
     type: spot.type || 'Lugar deportivo',
+    equipmentType: spot.equipmentType ?? null,
     description: spot.description || '',
     city: spot.city || '',
     coordinates: [spot.longitude, spot.latitude],

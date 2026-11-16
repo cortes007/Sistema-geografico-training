@@ -1,11 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Star } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Star } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMapContext } from '../../context/useMapContext';
 import {
   guardarCalificacionLugar,
   listarCalificacionesLugar,
+  listarComponentesCalificacionUsuario,
 } from '../../services/calificacionesService';
+import { listarResumenComponentesSpot } from '../../services/spotInsightsService';
+import {
+  getComponentCriteriaForPlace,
+  mergeComponentSummaryWithCriteria,
+} from '../../utils/componentQuality';
 
 function Stars({ value, interactive = false, onSelect }) {
   return (
@@ -53,30 +59,62 @@ function ReviewCard({ review, isCurrentUser }) {
   );
 }
 
-export default function PlaceRatingsPanel({ place, onRequestAuth }) {
+export default function PlaceRatingsPanel({
+  place,
+  onRequestAuth,
+  defaultShowOptionalRatings = false,
+}) {
   const { user } = useAuth();
   const { refreshPlaceRatings } = useMapContext();
-  const { name, type, latitude, longitude, trainingSpotId } = place;
+  const { name, type, equipmentType, latitude, longitude, trainingSpotId } = place;
   const requestId = useRef(0);
   const [reviews, setReviews] = useState([]);
+  const [componentSummaryRows, setComponentSummaryRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [componentRatings, setComponentRatings] = useState({});
+  const [showOptionalRatings, setShowOptionalRatings] = useState(defaultShowOptionalRatings);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+
+  const criteria = useMemo(
+    () => getComponentCriteriaForPlace({ equipmentType, type }),
+    [equipmentType, type]
+  );
+
+  const componentSummary = useMemo(
+    () => mergeComponentSummaryWithCriteria(criteria, componentSummaryRows),
+    [componentSummaryRows, criteria]
+  );
 
   const loadReviews = useCallback(async () => {
     const currentRequest = ++requestId.current;
     setLoading(true);
     setError('');
     try {
-      const nextReviews = await listarCalificacionesLugar({ name, type, latitude, longitude });
+      const [nextReviews, nextComponentRows] = await Promise.all([
+        listarCalificacionesLugar({ name, type, latitude, longitude }),
+        trainingSpotId ? listarResumenComponentesSpot(trainingSpotId).catch(() => []) : Promise.resolve([]),
+      ]);
       if (currentRequest !== requestId.current) return;
+
       setReviews(nextReviews);
+      setComponentSummaryRows(nextComponentRows);
+
       const ownReview = user ? nextReviews.find((review) => review.usuario_id === user.id) : null;
       setRating(ownReview?.calificacion ?? 0);
       setComment(ownReview?.comentario ?? '');
+
+      if (ownReview?.id && trainingSpotId) {
+        const ownComponents = await listarComponentesCalificacionUsuario(ownReview.id).catch(() => ({}));
+        if (currentRequest === requestId.current) {
+          setComponentRatings(ownComponents);
+        }
+      } else {
+        setComponentRatings({});
+      }
     } catch (reason) {
       if (currentRequest === requestId.current) {
         setError(reason.message || 'No se pudieron cargar las opiniones.');
@@ -84,7 +122,7 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
     } finally {
       if (currentRequest === requestId.current) setLoading(false);
     }
-  }, [name, type, latitude, longitude, user]);
+  }, [name, type, latitude, longitude, trainingSpotId, user]);
 
   useEffect(() => {
     Promise.resolve().then(loadReviews);
@@ -101,7 +139,7 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
     try {
       await guardarCalificacionLugar(
         { name, type, latitude, longitude, trainingSpotId },
-        { calificacion: rating, comentario: comment }
+        { calificacion: rating, comentario: comment, componentes: componentRatings }
       );
       refreshPlaceRatings();
       setSuccess('Tu opinión se guardó correctamente.');
@@ -116,6 +154,8 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
   const average = reviews.length
     ? reviews.reduce((total, review) => total + review.calificacion, 0) / reviews.length
     : 0;
+  const hasComponentScores = componentSummary.some((item) => item.ratingCount > 0);
+  const ratedOptionalCount = criteria.filter((criterion) => Number(componentRatings[criterion.key]) > 0).length;
 
   return (
     <section className="mt-4 border-t border-[var(--color-bg-elevated)] pt-3">
@@ -128,6 +168,22 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
         )}
       </div>
 
+      {hasComponentScores && (
+        <div aria-label="Resumen de calidad de componentes" className="mt-2.5 space-y-1.5 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)]/70 p-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
+            Calidad de componentes
+          </p>
+          {componentSummary.map((item) => (
+            <div key={item.key} className="flex items-center justify-between gap-2 text-xs">
+              <span className="truncate text-[var(--color-text-primary)]">{item.label}</span>
+              <span className="shrink-0 font-semibold text-[var(--color-accent-warning)]">
+                {item.averageRating !== null ? `${item.averageRating.toFixed(1)} / 5` : 'Sin datos'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {user ? (
         <form onSubmit={saveReview} className="mt-3 space-y-2 rounded-xl border border-[var(--color-accent-warning)]/30 bg-[var(--color-accent-warning)]/10 p-3">
           <label className="block text-xs font-semibold text-[var(--color-text-primary)]">
@@ -136,6 +192,51 @@ export default function PlaceRatingsPanel({ place, onRequestAuth }) {
               <Stars value={rating} interactive onSelect={setRating} />
             </span>
           </label>
+
+          {trainingSpotId && (
+            <div className="rounded-lg border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)]/60">
+              <button
+                type="button"
+                aria-expanded={showOptionalRatings}
+                aria-controls="optional-component-ratings"
+                onClick={() => setShowOptionalRatings((open) => !open)}
+                className="flex min-h-11 w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-[11px] font-semibold text-[var(--color-text-secondary)] transition-colors motion-reduce:transition-none hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              >
+                <span>
+                  Calidad de instalaciones (opcional)
+                  {ratedOptionalCount > 0 ? ` · ${ratedOptionalCount}/${criteria.length}` : ''}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`h-4 w-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none ${
+                    showOptionalRatings ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              {showOptionalRatings && (
+                <div
+                  id="optional-component-ratings"
+                  className="space-y-1.5 border-t border-[var(--color-bg-elevated)] px-2.5 py-2"
+                >
+                  {criteria.map((criterion) => (
+                    <div key={criterion.key} className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="text-[11px] text-[var(--color-text-primary)]">{criterion.label}</span>
+                      <Stars
+                        value={componentRatings[criterion.key] || 0}
+                        interactive
+                        onSelect={(value) =>
+                          setComponentRatings((prev) => ({
+                            ...prev,
+                            [criterion.key]: prev[criterion.key] === value ? 0 : value,
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <label className="block text-xs font-semibold text-[var(--color-text-primary)]">
             Comentario <span className="font-normal text-[var(--color-text-secondary)]">(opcional)</span>
             <textarea
