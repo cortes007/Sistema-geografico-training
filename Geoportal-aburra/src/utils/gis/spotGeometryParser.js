@@ -76,3 +76,27 @@ export function parseSpotGeometryToLonLat(rawGeom) {
     return null;
   }
 }
+
+/**
+ * Decodifica una geometría LineString (GeoJSON o EWKB hex en EPSG:4326 / EPSG:3857)
+ * y retorna un arreglo de coordenadas [longitude, latitude] en EPSG:4326.
+ */
+export function parseLineGeometryToLonLat(rawGeom) {
+  try {
+    const geometry = readRawGeometry(rawGeom);
+    if (!geometry || geometry.getType() !== 'LineString') return null;
+
+    const rawCoordinates = geometry.getCoordinates();
+    if (!Array.isArray(rawCoordinates) || rawCoordinates.length < 2) return null;
+
+    const parsed = [];
+    for (const coord of rawCoordinates) {
+      const point = toValidLonLat(coord);
+      if (!point) return null;
+      parsed.push([point.longitude, point.latitude]);
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}

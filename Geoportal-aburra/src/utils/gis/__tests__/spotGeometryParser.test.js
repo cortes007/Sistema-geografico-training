@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import LineString from 'ol/geom/LineString';
 import Point from 'ol/geom/Point';
 import WKB from 'ol/format/WKB';
 import { fromLonLat } from 'ol/proj';
-import { parseSpotGeometryToLonLat } from '../spotGeometryParser';
+import { parseLineGeometryToLonLat, parseSpotGeometryToLonLat } from '../spotGeometryParser';
 
 describe('spotGeometryParser (EPSG:4326 / EPSG:3857 -> EPSG:4326)', () => {
   it('parses a GeoJSON Point in EPSG:4326', () => {
@@ -63,5 +64,40 @@ describe('spotGeometryParser (EPSG:4326 / EPSG:3857 -> EPSG:4326)', () => {
     expect(parseSpotGeometryToLonLat('')).toBeNull();
     expect(parseSpotGeometryToLonLat('not-valid-hex')).toBeNull();
     expect(parseSpotGeometryToLonLat({ type: 'Point', coordinates: [] })).toBeNull();
+  });
+
+  it('parses GeoJSON and EWKB LineString geometries to EPSG:4326 coordinate arrays', () => {
+    const geoJsonLine = parseLineGeometryToLonLat({
+      type: 'LineString',
+      coordinates: [
+        [-75.59, 6.25],
+        [-75.58, 6.24],
+      ],
+    });
+    expect(geoJsonLine).toEqual([
+      [-75.59, 6.25],
+      [-75.58, 6.24],
+    ]);
+
+    const wkb = new WKB({ hex: true, ewkb: true });
+    const projectedCoords = [
+      fromLonLat([-75.5901, 6.2568], 'EPSG:3857'),
+      fromLonLat([-75.5745, 6.2248], 'EPSG:3857'),
+    ];
+    const hexLine = wkb.writeGeometry(new LineString(projectedCoords));
+    const parsedHex = parseLineGeometryToLonLat(hexLine);
+
+    expect(parsedHex).not.toBeNull();
+    expect(parsedHex).toHaveLength(2);
+    expect(parsedHex[0][0]).toBeCloseTo(-75.5901, 4);
+    expect(parsedHex[0][1]).toBeCloseTo(6.2568, 4);
+    expect(parsedHex[1][0]).toBeCloseTo(-75.5745, 4);
+    expect(parsedHex[1][1]).toBeCloseTo(6.2248, 4);
+  });
+
+  it('returns null when parseLineGeometryToLonLat receives non-line or single-point geometry', () => {
+    expect(parseLineGeometryToLonLat({ type: 'Point', coordinates: [-75.5, 6.2] })).toBeNull();
+    expect(parseLineGeometryToLonLat({ type: 'LineString', coordinates: [[-75.5, 6.2]] })).toBeNull();
+    expect(parseLineGeometryToLonLat(null)).toBeNull();
   });
 });

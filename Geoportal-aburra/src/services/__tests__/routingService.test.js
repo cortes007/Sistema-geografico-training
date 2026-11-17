@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getWalkingRoute } from '../routingService';
+import { getRoute, getWalkingRoute } from '../routingService';
 
 describe('routingService - getWalkingRoute', () => {
   const origin = { latitude: 6.251, longitude: -75.567 };
@@ -47,6 +47,53 @@ describe('routingService - getWalkingRoute', () => {
       coordinates: mockCoordinates,
       distanceMeters: 642,
       durationSeconds: 515.6,
+      profile: 'foot',
+      steps: [],
+    });
+  });
+
+  it('consulta /api/routes/bike para perfil bicicleta y retorna los pasos normalizados', async () => {
+    const mockCoordinates = [
+      [-75.567, 6.251],
+      [-75.570, 6.255],
+    ];
+    const mockSteps = [
+      {
+        instruction: 'Inicia el recorrido por Ciclorruta 70',
+        streetName: 'Ciclorruta 70',
+        distanceMeters: 642,
+        durationSeconds: 180,
+        maneuverType: 'depart',
+        modifier: null,
+        location: [-75.567, 6.251],
+      },
+    ];
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        coordinates: mockCoordinates,
+        distanceMeters: 642,
+        durationSeconds: 180,
+        steps: mockSteps,
+      }),
+    });
+
+    const result = await getRoute(origin, destination, { profile: 'bike' });
+
+    const [calledUrl, calledInit] = fetch.mock.calls[0];
+    expect(calledUrl.pathname).toBe('/api/routes/bike');
+    expect(JSON.parse(calledInit.body)).toEqual({
+      origin,
+      destination,
+      profile: 'bike',
+    });
+    expect(result).toEqual({
+      coordinates: mockCoordinates,
+      distanceMeters: 642,
+      durationSeconds: 180,
+      profile: 'bike',
+      steps: mockSteps,
     });
   });
 

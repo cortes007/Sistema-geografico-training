@@ -1,12 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/eventosService', () => ({
+  actualizarEvento: vi.fn(),
+  cancelarAsistencia: vi.fn(),
+  confirmarAsistencia: vi.fn(),
+  crearEvento: vi.fn(),
+  eliminarEvento: vi.fn(),
   listarEventosProximos: vi.fn(),
   listarInscripcionesUsuario: vi.fn(),
 }));
 
+vi.mock('../../services/trainingSpotsService', () => ({
+  listarTrainingSpots: vi.fn().mockResolvedValue([]),
+}));
+
 import {
+  filterMeetupsByActivity,
   loadGlobalMeetupsData,
+  resolveMeetupGoogleMapsUrl,
+  resolveMeetupRouteOverlay,
   resolveMeetupTargetPlace,
   sortMeetupsChronologically,
 } from '../useGlobalMeetups';
@@ -105,5 +117,74 @@ describe('useGlobalMeetups helpers', () => {
     expect(fromEwkb?.latitude).toBeCloseTo(6.223633, 5);
 
     expect(resolveMeetupTargetPlace({ ...geoJsonEvent, geom: null })).toBeNull();
+  });
+
+  const cyclingMeetup = {
+    id: 'evt-bike-1',
+    trainingSpotId: null,
+    organizadorId: 'user-3',
+    titulo: 'Rodada Valle de Aburrá',
+    descripcion: 'Por la ciclorruta de la 70',
+    fechaHoraInicio: '2026-11-20T19:00:00.000Z',
+    fechaHoraFin: null,
+    fechaCreacion: '2026-11-16T12:00:00.000Z',
+    lugarNombre: 'Estadio',
+    lugarDescripcion: null,
+    lugarTipo: 'ciclismo',
+    ciudad: null,
+    geom: { type: 'Point', coordinates: [-75.5901, 6.2568] },
+    asistentesConfirmados: 3,
+    tipoActividad: 'ciclismo',
+    perfilRuta: 'bike',
+    origenNombre: 'Estadio',
+    destinoNombre: 'Ciudad del Río',
+    origenGeom: { type: 'Point', coordinates: [-75.5901, 6.2568] },
+    destinoGeom: { type: 'Point', coordinates: [-75.5745, 6.2248] },
+    rutaGeom: {
+      type: 'LineString',
+      coordinates: [
+        [-75.5901, 6.2568],
+        [-75.581, 6.24],
+        [-75.5745, 6.2248],
+      ],
+    },
+    distanciaMetros: 4300,
+    duracionSegundos: 780,
+  };
+
+  it('filters meetups by activity type including all, entrenamiento, running, and ciclismo', () => {
+    const runningMeetup = { ...cyclingMeetup, id: 'evt-run-1', tipoActividad: 'running', perfilRuta: 'foot' };
+    const list = [geoJsonEvent, cyclingMeetup, runningMeetup];
+
+    expect(filterMeetupsByActivity(list, 'todas')).toHaveLength(3);
+    expect(filterMeetupsByActivity(list, 'entrenamiento').map((e) => e.id)).toEqual(['evt-2']);
+    expect(filterMeetupsByActivity(list, 'ciclismo').map((e) => e.id)).toEqual(['evt-bike-1']);
+    expect(filterMeetupsByActivity(list, 'running').map((e) => e.id)).toEqual(['evt-run-1']);
+  });
+
+  it('resolves route overlay state and Google Maps deep link for running/cycling meetups', () => {
+    const overlay = resolveMeetupRouteOverlay(cyclingMeetup);
+    expect(overlay).toEqual({
+      meetupId: 'evt-bike-1',
+      profile: 'bike',
+      coordinates: [
+        [-75.5901, 6.2568],
+        [-75.581, 6.24],
+        [-75.5745, 6.2248],
+      ],
+      distanceMeters: 4300,
+      durationSeconds: 780,
+      steps: [],
+      showEndpoints: true,
+      originCoordinates: [-75.5901, 6.2568],
+      destinationCoordinates: [-75.5745, 6.2248],
+    });
+
+    const mapsUrl = resolveMeetupGoogleMapsUrl(cyclingMeetup);
+    const parsed = new URL(mapsUrl);
+    expect(parsed.searchParams.get('api')).toBe('1');
+    expect(parsed.searchParams.get('origin')).toBe('6.256800,-75.590100');
+    expect(parsed.searchParams.get('destination')).toBe('6.224800,-75.574500');
+    expect(parsed.searchParams.get('travelmode')).toBe('bicycling');
   });
 });

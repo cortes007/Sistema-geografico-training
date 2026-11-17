@@ -86,6 +86,7 @@ test('accepts a pre-parsed request body from a serverless runtime', async () => 
     coordinates: [[-75.5, 6.2], [-75.51, 6.21]],
     distanceMeters: 1200,
     durationSeconds: 900,
+    steps: [],
   });
 });
 
@@ -103,6 +104,14 @@ test('returns a pedestrian route from the configured OSRM-compatible routing eng
           geometry: { coordinates: [[-75.5, 6.2], [-75.51, 6.21]] },
           distance: 1200,
           duration: 900,
+          legs: [{
+            steps: [{
+              distance: 1200,
+              duration: 900,
+              name: 'Avenida Regional',
+              maneuver: { type: 'depart', location: [-75.5, 6.2] },
+            }],
+          }],
         }],
       });
     },
@@ -115,12 +124,21 @@ test('returns a pedestrian route from the configured OSRM-compatible routing eng
     coordinates: [[-75.5, 6.2], [-75.51, 6.21]],
     distanceMeters: 1200,
     durationSeconds: 900,
+    steps: [{
+      instruction: 'Inicia el recorrido por Avenida Regional',
+      streetName: 'Avenida Regional',
+      distanceMeters: 1200,
+      durationSeconds: 900,
+      maneuverType: 'depart',
+      modifier: null,
+      location: [-75.5, 6.2],
+    }],
   });
   assert.equal(
     new URL(requestedUrl).pathname,
     '/routed-foot/route/v1/foot/-75.5,6.2;-75.51,6.21'
   );
-  assert.equal(new URL(requestedUrl).search, '?overview=full&geometries=geojson');
+  assert.equal(new URL(requestedUrl).search, '?overview=full&geometries=geojson&steps=true');
   assert.equal(requestedOptions.headers['User-Agent'], 'Geoportal-Valle-de-Aburra/1.0');
 });
 
@@ -199,7 +217,7 @@ test('logs engine status, response body, and a URL with coordinates redacted in 
   assert.equal(logEntries.length, 1);
   assert.deepEqual(logEntries[0][1], {
     status: 500,
-    url: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/[coordenadas]?overview=full&geometries=geojson',
+    url: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/[coordenadas]?overview=full&geometries=geojson&steps=true',
     body: 'upstream diagnostic body',
   });
   assert.doesNotMatch(logEntries[0][1].url, /-75\.5|6\.2/);
@@ -427,4 +445,138 @@ test('evicts the least recently used (LRU) route when routeCacheMaxEntries is re
   // routeB was evicted so requesting it triggers a new fetch
   assert.equal((await requestRoute(url, routeB)).status, 200);
   assert.equal(routeCalls, 4);
+});
+
+test('supports bicycle profile on /api/routes/bike and /api/routes with steps=true', async () => {
+  const requestedUrls = [];
+  const serverUrl = await startServer({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    fetchRoute: async (routeUrl) => {
+      requestedUrls.push(new URL(routeUrl).pathname + new URL(routeUrl).search);
+      return Response.json({
+        code: 'Ok',
+        routes: [{
+          geometry: { coordinates: [[-75.5, 6.2], [-75.51, 6.21]] },
+          distance: 2450,
+          duration: 540,
+          legs: [{
+            steps: [{
+              distance: 2450,
+              duration: 540,
+              name: 'Ciclorruta Avenida El Poblado',
+              maneuver: { type: 'depart', location: [-75.5, 6.2] },
+            }],
+          }],
+        }],
+      });
+    },
+  });
+
+  const bikeUrl = serverUrl.replace('/api/routes/foot', '/api/routes/bike');
+  const bikeResponse = await requestRoute(bikeUrl, {
+    ...requestBody,
+    profile: 'bike',
+  });
+
+  assert.equal(bikeResponse.status, 200);
+  const bikePayload = await bikeResponse.json();
+  assert.equal(bikePayload.distanceMeters, 2450);
+  assert.equal(bikePayload.steps.length, 1);
+  assert.equal(
+    requestedUrls[0],
+    '/routed-bike/route/v1/bike/-75.5,6.2;-75.51,6.21?overview=full&geometries=geojson&steps=true'
+  );
+
+  // Unified /api/routes also routes foot without hitting bike cache
+  const unifiedUrl = serverUrl.replace('/api/routes/foot', '/api/routes');
+  const footResponse = await requestRoute(unifiedUrl, {
+    ...requestBody,
+    profile: 'foot',
+  });
+  assert.equal(footResponse.status, 200);
+  assert.equal(requestedUrls.length, 2);
+  assert.match(requestedUrls[1], /^\/routed-foot\/route\/v1\/foot\//);
+});
+
+test('rejects unsupported profiles or profile mismatches with endpoint path', async () => {
+  const url = await startServer({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    fetchRoute: async () => successResponse(),
+  });
+
+  const mismatchResponse = await requestRoute(url, { ...requestBody, profile: 'bike' });
+  assert.equal(mismatchResponse.status, 400);
+
+  const unsupportedResponse = await requestRoute(
+    url.replace('/api/routes/foot', '/api/routes'),
+    { ...requestBody, profile: 'car' }
+  );
+  assert.equal(unsupportedResponse.status, 400);
+});
+
+test('returns bicycle-specific 404 message on NoRoute and isolates cached steps from mutation', async () => {
+  let callCount = 0;
+  const handler = createRouteHandler({
+    routingEngineUrl: 'https://routing.openstreetmap.de',
+    diagnosticsEnabled: false,
+    fetchRoute: async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return Response.json({ code: 'NoRoute', routes: [] });
+      }
+      return Response.json({
+        code: 'Ok',
+        routes: [{
+          geometry: { coordinates: [[-75.5, 6.2], [-75.51, 6.21]] },
+          distance: 1500,
+          duration: 360,
+          legs: [{
+            steps: [{
+              distance: 1500,
+              duration: 360,
+              name: 'Ciclovía',
+              maneuver: { type: 'depart', location: [-75.5, 6.2] },
+            }],
+          }],
+        }],
+      });
+    },
+  });
+
+  const notFound = await invokeHandler(handler, {
+    method: 'POST',
+    url: '/api/routes/bike',
+    headers: { 'content-type': 'application/json' },
+    socket: { remoteAddress: '127.0.0.1' },
+    body: { ...requestBody, profile: 'bike' },
+  });
+  assert.equal(notFound.status, 404);
+  assert.equal(notFound.body.error, 'No se encontró una ruta en bicicleta.');
+
+  const ok = await invokeHandler(handler, {
+    method: 'POST',
+    url: '/api/routes/bike',
+    headers: { 'content-type': 'application/json' },
+    socket: { remoteAddress: '127.0.0.1' },
+    body: {
+      origin: { latitude: 6.22, longitude: -75.55 },
+      destination: { latitude: 6.23, longitude: -75.56 },
+      profile: 'bike',
+    },
+  });
+  assert.equal(ok.status, 200);
+  ok.body.steps[0].location[0] = 0;
+
+  const cached = await invokeHandler(handler, {
+    method: 'POST',
+    url: '/api/routes/bike',
+    headers: { 'content-type': 'application/json' },
+    socket: { remoteAddress: '127.0.0.1' },
+    body: {
+      origin: { latitude: 6.22, longitude: -75.55 },
+      destination: { latitude: 6.23, longitude: -75.56 },
+      profile: 'bike',
+    },
+  });
+  assert.equal(cached.body.steps[0].location[0], -75.5);
 });

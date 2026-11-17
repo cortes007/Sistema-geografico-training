@@ -1,13 +1,30 @@
 export type UUID = string;
+export type TipoActividad = 'entrenamiento' | 'running' | 'ciclismo';
+export type PerfilRuta = 'foot' | 'bike';
+
+export interface GeoPointInput {
+  latitude: number;
+  longitude: number;
+}
+
 export type EventoRow = {
   id: UUID;
-  training_spot_id: string;
+  training_spot_id: string | null;
   organizador_id: UUID;
   titulo: string;
   descripcion: string | null;
   fecha_hora_inicio: string;
   fecha_hora_fin: string | null;
   fecha_creacion: string;
+  tipo_actividad: TipoActividad;
+  perfil_ruta: PerfilRuta | null;
+  origen_nombre: string | null;
+  destino_nombre: string | null;
+  origen_geom: unknown;
+  destino_geom: unknown;
+  ruta_geom: unknown;
+  distancia_metros: number | null;
+  duracion_segundos: number | null;
 };
 
 export type AsistenciaRow = {
@@ -43,7 +60,7 @@ export type QuedadaRow = EventoRow & {
 
 export interface EventoQuedada {
   id: UUID;
-  trainingSpotId: string;
+  trainingSpotId: string | null;
   organizadorId: UUID;
   titulo: string;
   descripcion: string | null;
@@ -56,6 +73,15 @@ export interface EventoQuedada {
   ciudad: string | null;
   geom: unknown;
   asistentesConfirmados: number;
+  tipoActividad: TipoActividad;
+  perfilRuta: PerfilRuta | null;
+  origenNombre: string | null;
+  destinoNombre: string | null;
+  origenGeom: unknown;
+  destinoGeom: unknown;
+  rutaGeom: unknown;
+  distanciaMetros: number | null;
+  duracionSegundos: number | null;
 }
 
 export interface AsistenciaEvento {
@@ -65,16 +91,23 @@ export interface AsistenciaEvento {
 }
 
 export type CrearEventoDTO = {
-  trainingSpotId: string;
+  trainingSpotId?: string | null;
+  tipoActividad?: TipoActividad;
+  perfilRuta?: PerfilRuta | null;
   titulo: string;
   descripcion?: string | null;
   fechaHoraInicio: string;
   fechaHoraFin?: string | null;
+  origenNombre?: string | null;
+  destinoNombre?: string | null;
+  origen?: GeoPointInput | null;
+  destino?: GeoPointInput | null;
+  rutaCoordenadas?: Array<[number, number]> | null;
+  distanciaMetros?: number | null;
+  duracionSegundos?: number | null;
 };
 
-export type ActualizarEventoDTO = Partial<Omit<CrearEventoDTO, 'trainingSpotId'>> & {
-  trainingSpotId?: string;
-};
+export type ActualizarEventoDTO = Partial<CrearEventoDTO>;
 
 export type EventoInput = CrearEventoDTO;
 export type Quedada = EventoQuedada;

@@ -19,8 +19,9 @@ export default function MapContainer({
   onCancelPickingLocation,
 }) {
   const targetRef = useRef(null);
-  const { map } = useMapContext();
+  const { map, pickingPointTarget, setPickingPointTarget } = useMapContext();
   const [toast, setToast] = useState('');
+  const isPickingAnyPoint = isPickingLocation || Boolean(pickingPointTarget);
   useOpenMap(targetRef);
   useClickMarker();
   useLocationOverlay();
@@ -67,23 +68,35 @@ export default function MapContainer({
   }, [map]);
 
   useEffect(() => {
-    if (!isPickingLocation) return undefined;
+    if (!isPickingAnyPoint) return undefined;
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        onCancelPickingLocation?.();
+        if (isPickingLocation) onCancelPickingLocation?.();
+        if (pickingPointTarget) setPickingPointTarget(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPickingLocation, onCancelPickingLocation]);
+  }, [isPickingAnyPoint, isPickingLocation, onCancelPickingLocation, pickingPointTarget, setPickingPointTarget]);
+
+  const pickingPrompt = pickingPointTarget === 'meetup-origin'
+    ? 'Haz clic en el mapa para fijar el origen de la quedada.'
+    : pickingPointTarget === 'meetup-destination'
+      ? 'Haz clic en el mapa para fijar el destino de la quedada.'
+      : 'Haz clic en cualquier punto del mapa para fijar tu ubicación.';
+
+  const cancelActivePicking = () => {
+    if (pickingPointTarget) setPickingPointTarget(null);
+    if (isPickingLocation) onCancelPickingLocation?.();
+  };
 
   return (
     <div className="relative h-full w-full">
       <div
         ref={targetRef}
-        className={`h-full w-full ${isPickingLocation ? 'cursor-crosshair' : ''}`}
+        className={`h-full w-full ${isPickingAnyPoint ? 'cursor-crosshair' : ''}`}
       />
       {map && (
         <MapControls
@@ -95,16 +108,16 @@ export default function MapContainer({
           onCancelPickingLocation={onCancelPickingLocation}
         />
       )}
-      {isPickingLocation && (
+      {isPickingAnyPoint && (
         <div
           role="status"
           aria-live="polite"
           className="absolute bottom-6 left-1/2 z-30 flex w-[min(92vw,420px)] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)]/95 px-4 py-2.5 text-xs text-[var(--color-text-primary)] shadow-2xl backdrop-blur-sm max-md:bottom-[calc(var(--sheet-h)+12px)]"
         >
-          <span>Haz clic en cualquier punto del mapa para fijar tu ubicación.</span>
+          <span>{pickingPrompt}</span>
           <button
             type="button"
-            onClick={onCancelPickingLocation}
+            onClick={cancelActivePicking}
             className="min-h-11 shrink-0 rounded-xl bg-[var(--color-bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-accent)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
           >
             Cancelar

@@ -17,6 +17,8 @@ export function MapProvider({ children }) {
   const [locationError, setLocationError] = useState('');
   const [locationSource, setLocationSource] = useState(null); // null | 'gps' | 'manual'
   const [isPickingLocation, setIsPickingLocation] = useState(false);
+  const [pickingPointTarget, setPickingPointTarget] = useState(null); // null | 'meetup-origin' | 'meetup-destination'
+  const [meetupDraftPoints, setMeetupDraftPoints] = useState({ origin: null, destination: null });
   const [searchRadiusMeters, setSearchRadiusMeters] = useState(DEFAULT_SEARCH_RADIUS_METERS);
   const [spotFilters, setSpotFilters] = useState(DEFAULT_SPOT_FILTERS);
   const [spotFilterIndex, setSpotFilterIndex] = useState(() => ({
@@ -24,6 +26,8 @@ export function MapProvider({ children }) {
     upcomingSpotIds: new Set(),
   }));
   const [route, setRoute] = useState(null); // GeoJSON coordinates en EPSG:4326
+  const [routeProfile, setRouteProfile] = useState('foot'); // 'foot' | 'bike'
+  const [highlightedStep, setHighlightedStep] = useState(null); // { location: [lon, lat], index: number } | null
   const [ratingsVersion, setRatingsVersion] = useState(0);
   const [trainingSpotsError, setTrainingSpotsError] = useState('');
   const [activeEquipmentTypes, setActiveEquipmentTypes] = useState(() =>
@@ -116,6 +120,7 @@ export function MapProvider({ children }) {
 
   const clearRoute = useCallback(() => {
     setRoute(null);
+    setHighlightedStep(null);
   }, []);
 
   const refreshPlaceRatings = useCallback(() => {
@@ -151,6 +156,10 @@ export function MapProvider({ children }) {
       setLocationSource,
       isPickingLocation,
       setIsPickingLocation,
+      pickingPointTarget,
+      setPickingPointTarget,
+      meetupDraftPoints,
+      setMeetupDraftPoints,
       searchRadiusMeters,
       setSearchRadiusMeters,
       spotFilters,
@@ -161,6 +170,10 @@ export function MapProvider({ children }) {
       route,
       setRoute,
       clearRoute,
+      routeProfile,
+      setRouteProfile,
+      highlightedStep,
+      setHighlightedStep,
       ratingsVersion,
       refreshPlaceRatings,
       trainingSpotsError,
@@ -183,12 +196,16 @@ export function MapProvider({ children }) {
       locationError,
       locationSource,
       isPickingLocation,
+      pickingPointTarget,
+      meetupDraftPoints,
       searchRadiusMeters,
       spotFilters,
       resetSpotFilters,
       spotFilterIndex,
       route,
       clearRoute,
+      routeProfile,
+      highlightedStep,
       ratingsVersion,
       refreshPlaceRatings,
       trainingSpotsError,

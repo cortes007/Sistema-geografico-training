@@ -17,6 +17,9 @@ $$;
 REVOKE ALL ON FUNCTION private.contar_asistentes_evento(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION private.contar_asistentes_evento(uuid) TO anon, authenticated;
 
+DROP FUNCTION IF EXISTS public.listar_quedadas();
+DROP FUNCTION IF EXISTS public.listar_eventos_proximos(varchar);
+
 CREATE OR REPLACE FUNCTION public.listar_quedadas()
 RETURNS TABLE (
   id uuid,
@@ -32,7 +35,16 @@ RETURNS TABLE (
   lugar_tipo text,
   ciudad text,
   geom public.geometry,
-  asistentes_confirmados bigint
+  asistentes_confirmados bigint,
+  tipo_actividad text,
+  perfil_ruta text,
+  origen_nombre text,
+  destino_nombre text,
+  origen_geom public.geometry,
+  destino_geom public.geometry,
+  ruta_geom public.geometry,
+  distancia_metros double precision,
+  duracion_segundos double precision
 )
 LANGUAGE sql
 STABLE
@@ -48,14 +60,23 @@ AS $$
     e.fecha_hora_inicio,
     e.fecha_hora_fin,
     e.fecha_creacion,
-    t.name AS lugar_nombre,
-    t.description AS lugar_descripcion,
-    t.leisure AS lugar_tipo,
-    t.city AS ciudad,
-    t.geom,
-    private.contar_asistentes_evento(e.id) AS asistentes_confirmados
+    COALESCE(t.name::text, e.origen_nombre, 'Ruta Valle de Aburrá'::text) AS lugar_nombre,
+    t.description::text AS lugar_descripcion,
+    COALESCE(t.leisure::text, e.tipo_actividad) AS lugar_tipo,
+    t.city::text AS ciudad,
+    COALESCE(t.geom, e.origen_geom) AS geom,
+    private.contar_asistentes_evento(e.id) AS asistentes_confirmados,
+    e.tipo_actividad,
+    e.perfil_ruta,
+    e.origen_nombre,
+    e.destino_nombre,
+    e.origen_geom,
+    e.destino_geom,
+    e.ruta_geom,
+    e.distancia_metros,
+    e.duracion_segundos
   FROM public.eventos_quedadas AS e
-  INNER JOIN public.training_spots AS t
+  LEFT JOIN public.training_spots AS t
     ON t.id = e.training_spot_id
   ORDER BY e.fecha_hora_inicio;
 $$;
@@ -67,7 +88,10 @@ RETURNS TABLE (
   id uuid, training_spot_id varchar, organizador_id uuid, titulo text,
   descripcion text, fecha_hora_inicio timestamptz, fecha_hora_fin timestamptz,
   fecha_creacion timestamptz, lugar_nombre text, lugar_descripcion text,
-  lugar_tipo text, ciudad text, geom public.geometry, asistentes_confirmados bigint
+  lugar_tipo text, ciudad text, geom public.geometry, asistentes_confirmados bigint,
+  tipo_actividad text, perfil_ruta text, origen_nombre text, destino_nombre text,
+  origen_geom public.geometry, destino_geom public.geometry, ruta_geom public.geometry,
+  distancia_metros double precision, duracion_segundos double precision
 )
 LANGUAGE sql
 STABLE
@@ -83,14 +107,23 @@ AS $$
     e.fecha_hora_inicio,
     e.fecha_hora_fin,
     e.fecha_creacion,
-    t.name AS lugar_nombre,
-    t.description AS lugar_descripcion,
-    t.leisure AS lugar_tipo,
-    t.city AS ciudad,
-    t.geom,
-    private.contar_asistentes_evento(e.id) AS asistentes_confirmados
+    COALESCE(t.name::text, e.origen_nombre, 'Ruta Valle de Aburrá'::text) AS lugar_nombre,
+    t.description::text AS lugar_descripcion,
+    COALESCE(t.leisure::text, e.tipo_actividad) AS lugar_tipo,
+    t.city::text AS ciudad,
+    COALESCE(t.geom, e.origen_geom) AS geom,
+    private.contar_asistentes_evento(e.id) AS asistentes_confirmados,
+    e.tipo_actividad,
+    e.perfil_ruta,
+    e.origen_nombre,
+    e.destino_nombre,
+    e.origen_geom,
+    e.destino_geom,
+    e.ruta_geom,
+    e.distancia_metros,
+    e.duracion_segundos
   FROM public.eventos_quedadas AS e
-  INNER JOIN public.training_spots AS t
+  LEFT JOIN public.training_spots AS t
     ON t.id = e.training_spot_id
   WHERE e.fecha_hora_inicio > pg_catalog.now()
     AND (training_spot_id_param IS NULL OR e.training_spot_id = training_spot_id_param)

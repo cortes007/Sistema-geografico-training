@@ -11,20 +11,27 @@ import MeetupsPanel from './components/meetups/MeetupsPanel';
 import GlobalMeetupsPanel from './components/meetups/GlobalMeetupsPanel';
 import PlaceRatingsPanel from './components/map/PlaceRatingsPanel';
 import SpotLinksBar from './components/map/SpotLinksBar';
+import RouteStepsPanel from './components/map/RouteStepsPanel';
 import { useAuth } from './hooks/useAuth';
 import { useSpotInsights } from './hooks/useSpotInsights';
 import { useUserLocation } from './hooks/useUserLocation';
 import { useDirections } from './hooks/useDirections';
+import { buildGoogleMapsDirectionsUrl } from './utils/googleMapsLinks';
 
 function PlaceDetailsCard({
   onBack,
   onRequestAuth,
   onGetDirections,
   onPickLocation,
+  userLocation,
   hasUserLocation,
   directionsLoading,
   directionsError,
   route,
+  routeProfile,
+  onSelectRouteProfile,
+  highlightedStepIndex,
+  onSelectStep,
 }) {
   const { selectedPlace } = useMapContext();
   const { user } = useAuth();
@@ -63,7 +70,14 @@ function PlaceDetailsCard({
 
   if (!selectedPlace) return null;
 
-  const googleMapsUrl = `https://www.google.com/maps?q=${selectedPlace.latitude},${selectedPlace.longitude}&z=18`;
+  const googleMapsUrl = buildGoogleMapsDirectionsUrl({
+    origin: userLocation,
+    destination: {
+      latitude: selectedPlace.latitude,
+      longitude: selectedPlace.longitude,
+    },
+    profile: route?.profile || routeProfile,
+  });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-primary)] shadow-2xl">
@@ -142,6 +156,14 @@ function PlaceDetailsCard({
           onRequestAuth={onRequestAuth}
         />
 
+        <RouteStepsPanel
+          routeProfile={routeProfile}
+          onSelectProfile={onSelectRouteProfile}
+          route={route}
+          highlightedStepIndex={highlightedStepIndex}
+          onSelectStep={onSelectStep}
+          disabled={directionsLoading}
+        />
         <button
           type="button"
           onClick={onGetDirections}
@@ -158,23 +180,13 @@ function PlaceDetailsCard({
         <a
           href={googleMapsUrl}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--color-brand)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-light)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-brand)]/10 max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]"
         >
           <Navigation aria-hidden="true" className="h-4 w-4" />
           Abrir en Google Maps
           <ExternalLink aria-hidden="true" className="h-4 w-4" />
         </a>
-        {route && (
-          <p role="status" className="text-xs text-[var(--color-text-secondary)]">
-            Ruta peatonal: {(route.distanceMeters / 1000).toFixed(1)} km · {Math.ceil(route.durationSeconds / 60)} min aprox.
-          </p>
-        )}
-        {route && (
-          <p className="text-[10px] text-[var(--color-text-secondary)]">
-            Ruta peatonal calculada por el servicio del geoportal.
-          </p>
-        )}
         {directionsError && (
           <div className="space-y-2">
             <p role="alert" className="text-xs text-[var(--color-accent-danger)]">{directionsError}</p>
@@ -218,7 +230,13 @@ function GeoportalContent() {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState('explore');
   const [authMode, setAuthMode] = useState(null);
-  const { selectedPlace, clearSelectedPlace, userLocation, route } = useMapContext();
+  const {
+    selectedPlace,
+    clearSelectedPlace,
+    userLocation,
+    route,
+    setPickingPointTarget,
+  } = useMapContext();
   const {
     status: locationStatus,
     error: locationError,
@@ -231,7 +249,11 @@ function GeoportalContent() {
   } = useUserLocation();
   const {
     getDirections,
+    changeProfile,
+    focusStep,
     clearDirections,
+    routeProfile,
+    highlightedStep,
     loading: directionsLoading,
     error: directionsError,
     setError: setDirectionsError,
@@ -261,7 +283,7 @@ function GeoportalContent() {
       setResolvingLocation(false);
       if (!locationFound) {
         pendingDirectionsRef.current = null;
-        setDirectionsError('Debes conceder acceso a tu ubicación actual para calcular la ruta peatonal.');
+        setDirectionsError('Debes conceder acceso a tu ubicación actual para calcular la ruta.');
       }
       return;
     }
@@ -369,7 +391,10 @@ function GeoportalContent() {
                 id="tab-explore"
                 aria-selected={sidebarTab === 'explore'}
                 aria-controls="panel-explore"
-                onClick={() => setSidebarTab('explore')}
+                onClick={() => {
+                  setPickingPointTarget(null);
+                  setSidebarTab('explore');
+                }}
                 className={`min-h-10 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
                   sidebarTab === 'explore'
                     ? 'bg-[var(--color-accent)] text-white'
@@ -409,7 +434,7 @@ function GeoportalContent() {
               </div>
             ) : (
               <div role="tabpanel" id="panel-meetups" aria-labelledby="tab-meetups">
-                <GlobalMeetupsPanel />
+                <GlobalMeetupsPanel onRequestAuth={() => setAuthMode('login')} />
               </div>
             )}
             {selectedPlace ? (
@@ -422,10 +447,15 @@ function GeoportalContent() {
                     setDirectionsError('');
                     startPickingLocation();
                   }}
+                  userLocation={userLocation}
                   hasUserLocation={Boolean(userLocation)}
                   directionsLoading={directionsLoading || resolvingLocation}
                   directionsError={directionsError}
                   route={route?.destinationKey === selectedPlaceKey ? route : null}
+                  routeProfile={routeProfile}
+                  onSelectRouteProfile={(profile) => changeProfile(profile, selectedPlace)}
+                  highlightedStepIndex={highlightedStep?.index ?? null}
+                  onSelectStep={focusStep}
                 />
               </div>
             ) : null}

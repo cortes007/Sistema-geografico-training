@@ -86,15 +86,23 @@ export function useClickMarker() {
     setSelectedPlace,
     clearSelectedPlace,
     isPickingLocation,
+    pickingPointTarget,
+    setPickingPointTarget,
+    setMeetupDraftPoints,
   } = useMapContext();
   const { setManualLocation } = useUserLocation();
   const isPickingLocationRef = useRef(isPickingLocation);
+  const pickingPointTargetRef = useRef(pickingPointTarget);
   const setManualLocationRef = useRef(setManualLocation);
   const markerFeatureRef = useRef(null);
 
   useEffect(() => {
     isPickingLocationRef.current = isPickingLocation;
   }, [isPickingLocation]);
+
+  useEffect(() => {
+    pickingPointTargetRef.current = pickingPointTarget;
+  }, [pickingPointTarget]);
 
   useEffect(() => {
     setManualLocationRef.current = setManualLocation;
@@ -115,6 +123,23 @@ export function useClickMarker() {
     map.addLayer(markerLayer);
 
     const handleClick = (event) => {
+      if (pickingPointTargetRef.current) {
+        const picked = resolveMapClickCoordinate(
+          event.coordinate,
+          map.getView().getProjection()
+        );
+        const key = pickingPointTargetRef.current === 'meetup-origin' ? 'origin' : 'destination';
+        setMeetupDraftPoints((current) => ({
+          ...current,
+          [key]: {
+            latitude: Number(picked.latitude.toFixed(6)),
+            longitude: Number(picked.longitude.toFixed(6)),
+          },
+        }));
+        setPickingPointTarget(null);
+        return;
+      }
+
       if (isPickingLocationRef.current) {
         const picked = resolveMapClickCoordinate(
           event.coordinate,
@@ -187,7 +212,7 @@ export function useClickMarker() {
       source.clear();
       markerFeatureRef.current = null;
     };
-  }, [clearSelectedPlace, map, setSelectedPlace]);
+  }, [clearSelectedPlace, map, setMeetupDraftPoints, setPickingPointTarget, setSelectedPlace]);
 
   useEffect(() => {
     const markerFeature = markerFeatureRef.current;

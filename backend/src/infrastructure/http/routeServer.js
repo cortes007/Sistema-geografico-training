@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_ROUTING_USER_AGENT, getRouteEnv } from '../../config/env.js';
+import { normalizeOsrmSteps } from '../../application/routing/osrmSteps.js';
 
 const MAX_BODY_BYTES = 4096;
 const ROUTE_TIMEOUT_MS = 15_000;
@@ -10,7 +11,13 @@ const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_ROUTE_CACHE_TTL_MS = 600_000;
 const DEFAULT_ROUTE_CACHE_MAX_ENTRIES = 500;
 const PROFILE_PATHS = {
-    foot: { prefix: '/routed-foot', osrmProfile: 'foot' },
+    foot: { prefix: '/routed-foot', osrmProfile: 'foot', label: 'peatonal' },
+    bike: { prefix: '/routed-bike', osrmProfile: 'bike', label: 'en bicicleta' },
+};
+const ROUTE_ENDPOINTS = {
+    '/api/routes': null,
+    '/api/routes/foot': 'foot',
+    '/api/routes/bike': 'bike',
 };
 
 function sendJson(response, status, body) {
@@ -39,6 +46,12 @@ function copyRoute(route) {
         coordinates: route.coordinates.map((coordinate) => [...coordinate]),
         distanceMeters: route.distanceMeters,
         durationSeconds: route.durationSeconds,
+        steps: Array.isArray(route.steps)
+            ? route.steps.map((step) => ({
+                ...step,
+                location: Array.isArray(step.location) ? [...step.location] : null,
+            }))
+            : [],
     };
 }
 
@@ -163,7 +176,23 @@ function buildOsrmUrl(base, profile, origin, destination) {
         `${origin.longitude},${origin.latitude}`,
         `${destination.longitude},${destination.latitude}`,
     ].join(';');
-    return `${baseUrl.origin}${profilePath.prefix}/route/v1/${profilePath.osrmProfile}/${coordinates}?overview=full&geometries=geojson`;
+    return `${baseUrl.origin}${profilePath.prefix}/route/v1/${profilePath.osrmProfile}/${coordinates}?overview=full&geometries=geojson&steps=true`;
+}
+
+function resolveRequestedProfile(endpointProfile, bodyProfile) {
+    if (endpointProfile) {
+        if (bodyProfile !== undefined && bodyProfile !== endpointProfile) {
+            return {
+                error: `El endpoint solo admite el perfil "${endpointProfile}".`,
+            };
+        }
+        return { profile: endpointProfile };
+    }
+
+    if (typeof bodyProfile !== 'string' || !PROFILE_PATHS[bodyProfile]) {
+        return { error: 'El perfil de ruta debe ser "foot" o "bike".' };
+    }
+    return { profile: bodyProfile };
 }
 
 export function createRouteHandler({
@@ -194,10 +223,15 @@ export function createRouteHandler({
 
     const handler = async (request, response) => {
         const requestUrl = new URL(request.url || '/', 'http://localhost');
-        if (request.method !== 'POST' || requestUrl.pathname !== '/api/routes/foot') {
+        const hasKnownEndpoint = Object.prototype.hasOwnProperty.call(
+            ROUTE_ENDPOINTS,
+            requestUrl.pathname
+        );
+        if (request.method !== 'POST' || !hasKnownEndpoint) {
             sendJson(response, 404, { error: 'Ruta no encontrada.' });
             return;
         }
+        const endpointProfile = ROUTE_ENDPOINTS[requestUrl.pathname];
 
         cleanExpiredEntries();
         const clientIp = getClientIp(request, trustProxy);
@@ -226,16 +260,20 @@ export function createRouteHandler({
                 sendJson(response, 400, { error: 'Las coordenadas de origen y destino no son válidas.' });
                 return;
             }
-            if (payload.profile !== 'foot') {
-                sendJson(response, 400, { error: 'Solo se admite el perfil peatonal.' });
+            const { profile, error: profileError } = resolveRequestedProfile(
+                endpointProfile,
+                payload.profile
+            );
+            if (profileError) {
+                sendJson(response, 400, { error: profileError });
                 return;
             }
             if (!routingEngineUrl) {
-                sendJson(response, 503, { error: 'No se configuró el motor de rutas peatonales.' });
+                sendJson(response, 503, { error: 'No se configuró el motor de rutas.' });
                 return;
             }
 
-            const cacheKey = createRouteCacheKey(payload.profile, payload.origin, payload.destination);
+            const cacheKey = createRouteCacheKey(profile, payload.origin, payload.destination);
             const cachedRoute = routeCache.get(cacheKey);
             if (cachedRoute && cachedRoute.expiresAt > now()) {
                 routeCache.delete(cacheKey);
@@ -247,7 +285,7 @@ export function createRouteHandler({
 
             const engineUrl = buildOsrmUrl(
                 routingEngineUrl,
-                payload.profile,
+                profile,
                 payload.origin,
                 payload.destination
             );
@@ -297,7 +335,8 @@ export function createRouteHandler({
             }
 
             if (result?.code === 'NoRoute') {
-                sendJson(response, 404, { error: 'No se encontró una ruta peatonal.' });
+                const profileLabel = PROFILE_PATHS[profile]?.label || 'peatonal';
+                sendJson(response, 404, { error: `No se encontró una ruta ${profileLabel}.` });
                 return;
             }
             if (result?.code !== 'Ok') {
@@ -335,6 +374,7 @@ export function createRouteHandler({
                 coordinates: route.geometry.coordinates,
                 distanceMeters: route.distance,
                 durationSeconds: route.duration,
+                steps: normalizeOsrmSteps(route),
             };
             if (routeCacheTtlMs > 0 && routeCacheMaxEntries > 0) {
                 if (routeCache.has(cacheKey)) {
@@ -363,6 +403,15 @@ export function createRouteServer(options = {}) {
     return createServer(createRouteHandler(options));
 }
 
+export function createServerlessRouteHandler(overrides = {}) {
+    const handler = createRouteHandler({
+        ...getRouteEnv(),
+        trustProxy: true,
+        ...overrides,
+    });
+    return (request, response) => handler(request, response);
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
     const {
         host,
@@ -387,6 +436,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         routeCacheMaxEntries,
     });
     server.listen(port, host, () => {
-        console.log(`Servicio de rutas disponible en http://${host}:${port}/api/routes/foot`);
+        console.log(`Servicio de rutas disponible en http://${host}:${port}/api/routes/{foot,bike}`);
     });
 }
