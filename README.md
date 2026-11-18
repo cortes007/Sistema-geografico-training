@@ -15,6 +15,9 @@ El geoportal permitira:
 - Reproyectar una capa entre diferentes sistemas de referencia espacial.
 - Capturar las coordenadas de una posición seleccionada en el mapa.
 - Mostrar las coordenadas en el sistema de referencia seleccionado.
+- Resaltar las unidades y zonas deportivas principales del Valle de Aburrá mediante sus polígonos reales de OpenStreetMap (`zonas_deportiva.geojson`).
+- Filtrar inteligentemente por municipio del Valle de Aburrá, calificación mínima, quedadas próximas y estado `"Abierto ahora"`.
+- Visualizar en el detalle de cada lugar la gráfica estimada de horas de mayor afluencia (horas pico) en zona horaria `America/Bogota`, enlaces verificados, rutas peatonales/en bicicleta (OSRM + Google Maps), calificaciones por componentes y agenda de quedadas.
 
 ## Tecnologías utilizadas
 
@@ -27,6 +30,7 @@ El geoportal permitira:
 | [shpjs](https://github.com/mbostock/shapefile) | Lectura de archivos Shapefile en el navegador. |
 | [Tailwind CSS](https://tailwindcss.com/) | Estilos y diseño de la interfaz. |
 | [Lucide React](https://lucide.dev/) | Iconos de la interfaz. |
+| [Supabase](https://supabase.com/) | Base de datos PostgreSQL/PostGIS, autenticación, políticas RLS, RPCs y teselas vectoriales MVT. |
 
 ## Requisitos
 
@@ -101,7 +105,7 @@ Para una capa proveniente de un Shapefile, el archivo `.prj` contiene la definic
 
 Los datos geográficos del proyecto se almacenan en `Geoportal-aburra/public/data/`. Esta carpeta es servida por Vite como contenido público y puede contener archivos GeoJSON, Shapefile y otros recursos geográficos.
 
-Los datos de parques del Valle de Aburrá se obtienen de [OpenStreetMap](https://www.openstreetmap.org/) mediante consultas de [Overpass Turbo](https://overpass-turbo.eu/). La consulta y los detalles de procedencia se encuentran en `docs/overpass.md`.
+Los datos de parques y unidades deportivas del Valle de Aburrá (`parques_aburra.geojson` y `zonas_deportiva.geojson`) se obtienen de [OpenStreetMap](https://www.openstreetmap.org/) mediante consultas de [Overpass Turbo](https://overpass-turbo.eu/). La bitácora técnica detallada de la arquitectura, capas, seguridad RLS y módulos del proyecto se encuentra en [`docs/MEMORY.md`](./docs/MEMORY.md).
 
 Los datos de OpenStreetMap se distribuyen bajo la licencia [ODbL](https://opendatacommons.org/licenses/odbl/). Las visualizaciones deben conservar la atribución correspondiente a OpenStreetMap.
 
