@@ -12,6 +12,7 @@ import GlobalMeetupsPanel from './components/meetups/GlobalMeetupsPanel';
 import PlaceRatingsPanel from './components/map/PlaceRatingsPanel';
 import SpotLinksBar from './components/map/SpotLinksBar';
 import RouteStepsPanel from './components/map/RouteStepsPanel';
+import PeakHoursChart from './components/map/PeakHoursChart';
 import { useAuth } from './hooks/useAuth';
 import { useSpotInsights } from './hooks/useSpotInsights';
 import { useUserLocation } from './hooks/useUserLocation';
@@ -202,6 +203,10 @@ function PlaceDetailsCard({
             )}
           </div>
         )}
+        <PeakHoursChart
+          equipmentType={selectedPlace.equipmentType}
+          type={selectedPlace.type}
+        />
         <PlaceRatingsPanel
           place={{
             name: selectedPlace.name,

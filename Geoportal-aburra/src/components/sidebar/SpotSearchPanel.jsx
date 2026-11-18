@@ -156,19 +156,23 @@ export default function SpotSearchPanel() {
               <p className="text-[11px] font-semibold text-[var(--color-text-secondary)]">
                 {results.length} {results.length === 1 ? 'resultado' : 'resultados'}
               </p>
-              <div className="flex max-h-56 flex-col gap-1.5 overflow-y-auto pr-0.5">
-                {results.slice(0, 40).map((spot) => (
+              <div className="flex max-h-72 flex-col gap-1.5 overflow-y-auto pr-0.5">
+                {results.map((spot) => (
                   <button
                     key={spot.trainingSpotId}
                     type="button"
                     onClick={() => selectSearchSpot(spot)}
-                    className="min-h-11 w-full rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] p-2.5 text-left transition-colors motion-reduce:transition-none hover:border-[var(--color-accent-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    className="min-h-11 w-full shrink-0 rounded-xl border border-[var(--color-bg-elevated)] bg-[var(--color-bg-primary)] p-2.5 text-left transition-colors motion-reduce:transition-none hover:border-[var(--color-accent-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                   >
                     <span className="block truncate text-xs font-semibold text-[var(--color-text-primary)]">
                       {spot.name}
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-[var(--color-text-secondary)]">
-                      <span>{spot.city || spot.type}</span>
+                      <span>
+                        {spot.city
+                          ? `${spot.city} · ${spot.equipmentType || spot.type}`
+                          : spot.equipmentType || spot.type}
+                      </span>
                       {spot.averageRating !== null && (
                         <>
                           <span aria-hidden="true">·</span>

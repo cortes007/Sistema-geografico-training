@@ -6,6 +6,7 @@ import { useClickMarker } from '../../hooks/useClickMarker';
 import { useLocationOverlay } from '../../hooks/useLocationOverlay';
 import { useRouteOverlay } from '../../hooks/useRouteOverlay';
 import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
+import { useZonasDeportivasLayer } from '../../hooks/useZonasDeportivasLayer';
 import MapControls from './MapControls';
 import { useMapContext } from '../../context/useMapContext';
 
@@ -27,6 +28,7 @@ export default function MapContainer({
   useLocationOverlay();
   useRouteOverlay();
   const trainingSpotsError = useInitialTrainingSpots();
+  useZonasDeportivasLayer();
 
   useEffect(() => {
     if (!map || map.get('baseLayersReady')) return;

@@ -1,3 +1,4 @@
+import { toLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import {
   EQUIPMENT_TYPE_STYLES,
@@ -72,11 +73,25 @@ export function createTrainingSpotStylePredicate({
     const trainingSpotId = rawId !== undefined && rawId !== null ? String(rawId) : '';
     const catalogSpot = trainingSpotId ? spotFilterIndex?.spotsById?.get(trainingSpotId) : null;
 
+    let lonLat = feature.get('lonLat4326');
+    if (!lonLat) {
+      const repPoint = getRepresentativePoint(feature);
+      const coords = repPoint?.getCoordinates?.();
+      if (Array.isArray(coords) && coords.length >= 2) {
+        // Transformación de EPSG:3857 a EPSG:4326 ([lon, lat])
+        lonLat = toLonLat(coords, 'EPSG:3857');
+        feature.set('lonLat4326', lonLat, true);
+      }
+    }
+
     return matchesSpotFilters(
       {
         trainingSpotId,
         name: feature.get('name') || catalogSpot?.name || '',
         city: feature.get('city') || feature.get('addr:city') || catalogSpot?.city || '',
+        description: feature.get('description') || catalogSpot?.description || '',
+        longitude: catalogSpot?.longitude ?? (Array.isArray(lonLat) ? lonLat[0] : null),
+        latitude: catalogSpot?.latitude ?? (Array.isArray(lonLat) ? lonLat[1] : null),
         equipmentType: feature.get('equipmentType') ?? catalogSpot?.equipmentType ?? null,
         openingHours:
           feature.get('opening_hours')

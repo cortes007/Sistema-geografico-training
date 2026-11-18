@@ -4,6 +4,7 @@ import {
   hasActiveSmartFilters,
   matchesSpotFilters,
   normalizeSearchText,
+  resolveSpotMunicipality,
 } from './spotFilters';
 
 const baseSpot = {
@@ -80,5 +81,42 @@ describe('spotFilters', () => {
     expect(hasActiveSmartFilters(DEFAULT_SPOT_FILTERS)).toBe(false);
     expect(hasActiveSmartFilters({ ...DEFAULT_SPOT_FILTERS, minRating: 4 })).toBe(true);
     expect(hasActiveSmartFilters({ ...DEFAULT_SPOT_FILTERS, onlyOpenNow: true })).toBe(true);
+  });
+
+  it('resuelve el municipio por variantes de city, nombre o coordenadas WGS84 cuando city viene vacío en OSM', () => {
+    expect(resolveSpotMunicipality({ city: 'Sabaneta Antioquia' })).toBe('Sabaneta');
+    expect(resolveSpotMunicipality({ city: 'El Poblado' })).toBe('Medellín');
+    expect(
+      resolveSpotMunicipality({
+        city: '',
+        name: 'El templo del Fútbol',
+        longitude: -75.586119,
+        latitude: 6.182795,
+      })
+    ).toBe('Envigado');
+    expect(
+      resolveSpotMunicipality({
+        city: '',
+        name: 'Placa deportiva Sector Miranda',
+        longitude: -75.613429,
+        latitude: 6.176779,
+      })
+    ).toBe('Itagüí');
+
+    const spotWithoutCityInEnvigado = {
+      trainingSpotId: 'spot-envigado-coords',
+      name: 'Señor Gol',
+      city: '',
+      longitude: -75.587052,
+      latitude: 6.181654,
+      equipmentType: 'centro deportivo',
+      openingHours: '24/7',
+    };
+    expect(
+      matchesSpotFilters(spotWithoutCityInEnvigado, {
+        ...DEFAULT_SPOT_FILTERS,
+        municipality: 'Envigado',
+      })
+    ).toBe(true);
   });
 });

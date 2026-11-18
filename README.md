@@ -104,3 +104,4 @@ Los datos geográficos del proyecto se almacenan en `Geoportal-aburra/public/dat
 Los datos de parques del Valle de Aburrá se obtienen de [OpenStreetMap](https://www.openstreetmap.org/) mediante consultas de [Overpass Turbo](https://overpass-turbo.eu/). La consulta y los detalles de procedencia se encuentran en `docs/overpass.md`.
 
 Los datos de OpenStreetMap se distribuyen bajo la licencia [ODbL](https://opendatacommons.org/licenses/odbl/). Las visualizaciones deben conservar la atribución correspondiente a OpenStreetMap.
+

@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import type { TrainingSpotRow } from '../types/database';
 import { getEquipmentTypeFromProperties } from '../constants/equipmentTypes';
 import { parseSpotGeometryToLonLat } from '../utils/gis/spotGeometryParser';
+import { resolveSpotMunicipality } from '../utils/spotFilters';
 import { throwSupabaseError } from './serviceUtils';
 
 export interface TrainingSpotItem {
@@ -31,15 +32,25 @@ function mapTrainingSpot(row: TrainingSpotRow): TrainingSpotItem | null {
     description: row.description,
   });
 
+  const longitude = Number(coordinates.longitude.toFixed(6));
+  const latitude = Number(coordinates.latitude.toFixed(6));
+  const city = resolveSpotMunicipality({
+    city: row.city?.trim() || '',
+    name: row.name?.trim() || '',
+    description: row.description?.trim() || '',
+    longitude,
+    latitude,
+  });
+
   return {
     trainingSpotId: String(row.id),
     name,
     type: leisure || 'Lugar deportivo',
     equipmentType,
     description: row.description?.trim() || '',
-    city: row.city?.trim() || '',
-    longitude: Number(coordinates.longitude.toFixed(6)),
-    latitude: Number(coordinates.latitude.toFixed(6)),
+    city,
+    longitude,
+    latitude,
     openingHours: '',
   };
 }
