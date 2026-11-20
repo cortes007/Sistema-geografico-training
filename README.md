@@ -122,35 +122,7 @@ Las definiciones personalizadas se encuentran en `Geoportal-aburra/src/config/cr
 npm run install:all
 ```
 
-2. **Configurar variables de entorno del backend** en `backend/.env`:
-
-```env
-ROUTING_ENGINE_URL=https://routing.openstreetmap.de
-ROUTING_API_PORT=3001
-ROUTING_API_HOST=127.0.0.1
-ROUTING_USER_AGENT=Geoportal-Valle-de-Aburra/1.0
-RATE_LIMIT_MAX=30
-RATE_LIMIT_WINDOW_MS=60000
-ROUTE_CACHE_TTL_MS=600000
-ROUTE_CACHE_MAX_ENTRIES=500
-TRUST_PROXY=false
-# Opcional: requerido únicamente para ejecutar migraciones con npm --prefix backend run migrate
-# DATABASE_URL=postgresql://usuario:password@host:5432/postgres
-```
-
-> `ROUTING_ENGINE_URL` debe contener solo la URL base del servicio OSRM-compatible (sin rutas adicionales).
-
-3. **Configurar variables de entorno del frontend** en `Geoportal-aburra/.env`:
-
-```env
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_ANON_KEY=tu_anon_key_publica
-# Opcionales:
-# VITE_ROUTE_API_URL=
-# VITE_MAPILLARY_CLIENT_TOKEN=
-```
-
-> Las variables `VITE_*` se incrustan en el cliente durante la compilación; nunca coloques llaves privadas ni `service_role` en `Geoportal-aburra/.env`.
+Variable de entorno de backend y Geoportal-aburra solo porporcinadas por los desarrolladores
 
 ### Ejecución y comandos disponibles
 
