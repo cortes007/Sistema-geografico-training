@@ -8,6 +8,7 @@ import { useRouteOverlay } from '../../hooks/useRouteOverlay';
 import { useInitialTrainingSpots } from '../../hooks/useInitialTrainingSpots';
 import { useZonasDeportivasLayer } from '../../hooks/useZonasDeportivasLayer';
 import MapControls from './MapControls';
+import ActiveRouteBanner from './ActiveRouteBanner';
 import { useMapContext } from '../../context/useMapContext';
 
 export default function MapContainer({
@@ -18,9 +19,10 @@ export default function MapContainer({
   onRequestLocation,
   onStartPickingLocation,
   onCancelPickingLocation,
+  onOpenRouteSteps = null,
 }) {
   const targetRef = useRef(null);
-  const { map, pickingPointTarget, setPickingPointTarget } = useMapContext();
+  const { map, route, clearRoute, pickingPointTarget, setPickingPointTarget } = useMapContext();
   const [toast, setToast] = useState('');
   const isPickingAnyPoint = isPickingLocation || Boolean(pickingPointTarget);
   useOpenMap(targetRef);
@@ -108,6 +110,13 @@ export default function MapContainer({
           onRequestLocation={onRequestLocation}
           onStartPickingLocation={onStartPickingLocation}
           onCancelPickingLocation={onCancelPickingLocation}
+        />
+      )}
+      {!isPickingAnyPoint && (
+        <ActiveRouteBanner
+          route={route}
+          onClearRoute={clearRoute}
+          onOpenSteps={onOpenRouteSteps}
         />
       )}
       {isPickingAnyPoint && (

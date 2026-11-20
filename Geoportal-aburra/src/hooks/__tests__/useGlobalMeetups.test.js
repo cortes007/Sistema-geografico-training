@@ -167,6 +167,7 @@ describe('useGlobalMeetups helpers', () => {
     expect(overlay).toEqual({
       meetupId: 'evt-bike-1',
       profile: 'bike',
+      label: 'Ciclismo',
       coordinates: [
         [-75.5901, 6.2568],
         [-75.581, 6.24],

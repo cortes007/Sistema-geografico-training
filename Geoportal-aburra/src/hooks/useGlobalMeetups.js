@@ -81,10 +81,12 @@ export function resolveMeetupRouteOverlay(event) {
   const origin = parseSpotGeometryToLonLat(event.origenGeom);
   const destination = parseSpotGeometryToLonLat(event.destinoGeom);
   const profile = event.perfilRuta || (event.tipoActividad === 'ciclismo' ? 'bike' : 'foot');
+  const label = event.tipoActividad === 'ciclismo' ? 'Ciclismo' : 'Running';
 
   return {
     meetupId: event.id,
     profile,
+    label,
     coordinates,
     distanceMeters: Number.isFinite(event.distanciaMetros) ? event.distanciaMetros : 0,
     durationSeconds: Number.isFinite(event.duracionSegundos) ? event.duracionSegundos : 0,
@@ -235,6 +237,7 @@ export function useGlobalMeetups() {
         ...result,
         meetupId: event.id,
         profile,
+        label: event.tipoActividad === 'ciclismo' ? 'Ciclismo' : 'Running',
         showEndpoints: true,
         originCoordinates: [origin.longitude, origin.latitude],
         destinationCoordinates: [destination.longitude, destination.latitude],
@@ -321,6 +324,11 @@ export function useGlobalMeetups() {
     }
   }, [loadMeetups]);
 
+  const stopViewingRoute = useCallback(() => {
+    setActiveRouteMeetupId(null);
+    clearRoute();
+  }, [clearRoute]);
+
   const deleteMeetup = useCallback(async (eventId) => {
     setActionError('');
     try {
@@ -392,6 +400,7 @@ export function useGlobalMeetups() {
     focusMeetupStep,
     toggleAttendance,
     deleteMeetup,
+    stopViewingRoute,
     saveRouteMeetup,
     prepareEditMeetup,
     routePickTarget: pickingPointTarget,

@@ -11,16 +11,19 @@ export const EQUIPMENT_TYPE_STYLES = {
     color: THEME_COLORS.gym,
     fill: colorWithAlpha(THEME_COLORS.gym, 0.2),
     label: 'Gimnasio',
+    shortLabel: 'Gimnasio',
   },
   [EQUIPMENT_TYPES.outdoorGym]: {
     color: THEME_COLORS.outdoor,
     fill: colorWithAlpha(THEME_COLORS.outdoor, 0.2),
     label: 'Training al aire libre',
+    shortLabel: 'Aire libre',
   },
   [EQUIPMENT_TYPES.sportsCentre]: {
     color: THEME_COLORS.center,
     fill: colorWithAlpha(THEME_COLORS.center, 0.2),
     label: 'Centros deportivos',
+    shortLabel: 'Centros',
   },
 };
 

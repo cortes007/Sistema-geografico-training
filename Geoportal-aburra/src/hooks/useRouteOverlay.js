@@ -8,6 +8,7 @@ import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { useMapContext } from '../context/useMapContext';
 import { getAnimationDuration } from '../utils/gis/mapCentering';
+import { getRouteFitPadding, MOBILE_SHEET_COLLAPSED_PX } from '../utils/mobileSheetState';
 
 const routeStyles = {
   foot: {
@@ -193,8 +194,23 @@ export function useRouteOverlay() {
       }
     }
 
+    const layout = document.querySelector('[data-geoportal-layout]');
+    const sidebar = document.getElementById('geoportal-sidebar');
+    const sidebarRect = sidebar?.getBoundingClientRect();
+    const isMobileSheetCollapsed = layout?.dataset.mobileSheetCollapsed === 'true';
+    const padding = getRouteFitPadding({
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      isPanelOpen: layout?.dataset.panelOpen === 'true',
+      sidebarWidth: sidebarRect?.width ?? 0,
+      sheetHeight: isMobileSheetCollapsed
+        ? MOBILE_SHEET_COLLAPSED_PX
+        : (sidebarRect?.height ?? MOBILE_SHEET_COLLAPSED_PX),
+      hasBanner: true,
+    });
+
     map.getView().fit(geometry.getExtent(), {
-      padding: [70, 70, 70, 70],
+      padding,
       maxZoom: 17,
       duration: getAnimationDuration(500),
     });

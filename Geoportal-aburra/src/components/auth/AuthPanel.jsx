@@ -128,8 +128,8 @@ export default function AuthPanel({ mode, setMode }) {
             <LogOut aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
-        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="absolute right-3 top-3 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:left-auto max-md:top-3 max-md:translate-x-0 max-md:flex">
-          <LogOut aria-hidden="true" className="h-5 w-5" />
+        <button type="button" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="absolute right-2.5 top-2.5 z-30 hidden h-9 w-9 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:left-auto max-md:top-2.5 max-md:translate-x-0 max-md:flex">
+          <LogOut aria-hidden="true" className="h-4 w-4" />
         </button>
       </>
     );
@@ -147,8 +147,8 @@ export default function AuthPanel({ mode, setMode }) {
           Registrarse
         </button>
       </div>
-      <button type="button" onClick={() => setMode('login')} aria-label="Iniciar sesión" title="Iniciar sesión" className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:left-auto max-md:top-3 max-md:translate-x-0 md:hidden">
-        <UserRound aria-hidden="true" className="h-5 w-5" />
+      <button type="button" onClick={() => setMode('login')} aria-label="Iniciar sesión" title="Iniciar sesión" className="absolute right-2.5 top-2.5 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)]/95 text-[var(--color-text-primary)] shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] max-md:left-auto max-md:top-2.5 max-md:translate-x-0 md:hidden">
+        <UserRound aria-hidden="true" className="h-4 w-4" />
       </button>
       {mode && <AuthForm mode={mode} onClose={() => setMode(null)} onChangeMode={setMode} />}
     </>

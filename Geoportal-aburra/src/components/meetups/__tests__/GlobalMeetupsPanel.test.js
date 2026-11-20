@@ -76,6 +76,7 @@ function createHookState(overrides = {}) {
     setDraftDestination: vi.fn(),
     resetDraftPoints: vi.fn(),
     clearRoutePreview: vi.fn(),
+    stopViewingRoute: vi.fn(),
     ...overrides,
   };
 }
@@ -103,5 +104,28 @@ describe('GlobalMeetupsPanel', () => {
     expect(html).toContain('Crear ruta');
     expect(html).toContain('Ver ruta');
     expect(html).not.toContain('Ver pasos');
+  });
+
+  it('shows "Dejar de ver ruta" button on the active route meetup card instead of "Ver ruta"', () => {
+    mockUseGlobalMeetups.mockReturnValue(
+      createHookState({
+        activeRouteMeetupId: runningMeetup.id,
+        activeRoute: {
+          meetupId: runningMeetup.id,
+          profile: 'foot',
+          coordinates: runningMeetup.rutaGeom.coordinates,
+          distanceMeters: 2100,
+          durationSeconds: 900,
+          steps: [],
+        },
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      createElement(GlobalMeetupsPanel, { onRequestAuth: vi.fn() })
+    );
+
+    expect(html).toContain('Dejar de ver ruta');
+    expect(html).not.toContain('>Ver ruta<');
   });
 });

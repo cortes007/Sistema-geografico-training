@@ -33,7 +33,7 @@ const ACTIVITY_BADGE = {
   ciclismo: { label: 'Ciclismo', className: 'bg-emerald-500/20 text-emerald-300' },
 };
 
-export default function GlobalMeetupsPanel({ onRequestAuth } = {}) {
+export default function GlobalMeetupsPanel({ onRequestAuth, onRouteViewed = null } = {}) {
   const {
     user,
     userLocation,
@@ -55,6 +55,7 @@ export default function GlobalMeetupsPanel({ onRequestAuth } = {}) {
     focusMeetupStep,
     toggleAttendance,
     deleteMeetup,
+    stopViewingRoute,
     saveRouteMeetup,
     prepareEditMeetup,
     routePickTarget,
@@ -307,16 +308,31 @@ export default function GlobalMeetupsPanel({ onRequestAuth } = {}) {
                         {isRegistered ? 'Cancelar asistencia' : 'Asistir'}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      disabled={!canLocate || (isRouteMeetup && stepsLoadingId === event.id)}
-                      onClick={() => selectMeetupSpot(event)}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-white transition-colors motion-reduce:transition-none hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                    >
-                      {isRouteMeetup
-                        ? (stepsLoadingId === event.id ? 'Cargando ruta...' : 'Ver ruta')
-                        : 'Ver en el mapa'}
-                    </button>
+                    {isRouteMeetup && isActiveRoute ? (
+                      <button
+                        type="button"
+                        onClick={stopViewingRoute}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[var(--color-bg-elevated)] px-3 py-1 text-xs font-semibold text-[var(--color-text-primary)] transition-colors motion-reduce:transition-none hover:bg-[var(--color-accent-danger)]/20 hover:text-[var(--color-accent-danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      >
+                        Dejar de ver ruta
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!canLocate || (isRouteMeetup && stepsLoadingId === event.id)}
+                        onClick={() => {
+                          const handled = selectMeetupSpot(event);
+                          if (handled && isRouteMeetup) {
+                            onRouteViewed?.(event);
+                          }
+                        }}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-white transition-colors motion-reduce:transition-none hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      >
+                        {isRouteMeetup
+                          ? (stepsLoadingId === event.id ? 'Cargando ruta...' : 'Ver ruta')
+                          : 'Ver en el mapa'}
+                      </button>
+                    )}
                   </div>
                 </div>
 

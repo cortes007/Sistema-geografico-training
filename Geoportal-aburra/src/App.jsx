@@ -18,6 +18,7 @@ import { useSpotInsights } from './hooks/useSpotInsights';
 import { useUserLocation } from './hooks/useUserLocation';
 import { useDirections } from './hooks/useDirections';
 import { buildGoogleMapsDirectionsUrl } from './utils/googleMapsLinks';
+import { computeMobileSheetHeight, shouldCollapseMobileSheetOnRoute } from './utils/mobileSheetState';
 
 function PlaceDetailsCard({
   onBack,
@@ -235,6 +236,7 @@ function GeoportalContent() {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState('explore');
   const [authMode, setAuthMode] = useState(null);
+  const [collapsedPlaceKey, setCollapsedPlaceKey] = useState(null);
   const {
     selectedPlace,
     clearSelectedPlace,
@@ -270,6 +272,13 @@ function GeoportalContent() {
     ? selectedPlace.trainingSpotId || `${selectedPlace.longitude},${selectedPlace.latitude}`
     : null;
   const lastSelectedPlaceKey = useRef(selectedPlaceKey);
+  const isSelectedPlaceSheetCollapsed = Boolean(selectedPlaceKey && collapsedPlaceKey === selectedPlaceKey);
+  const isMobileSheetExpanded = selectedPlace ? !isSelectedPlaceSheetCollapsed : !isPanelOpen;
+  const mobileSheetHeight = computeMobileSheetHeight({
+    hasSelectedPlace: Boolean(selectedPlace),
+    isPanelOpen,
+    isCollapsedForRoute: isSelectedPlaceSheetCollapsed,
+  });
 
   const handleGetDirections = useCallback(async () => {
     if (!selectedPlace) return;
@@ -293,8 +302,52 @@ function GeoportalContent() {
       return;
     }
 
-    await getDirections(selectedPlace);
+    await getDirections(selectedPlace, null, {
+      onSuccess: () => {
+        if (shouldCollapseMobileSheetOnRoute(window.innerWidth)) {
+          setCollapsedPlaceKey(destinationKey);
+        }
+      },
+    });
   }, [clearDirections, getDirections, requestLocation, route, selectedPlace, setDirectionsError, userLocation]);
+
+  const handleMeetupRouteViewed = useCallback(() => {
+    if (!shouldCollapseMobileSheetOnRoute(window.innerWidth)) return;
+    setCollapsedPlaceKey(null);
+    setIsPanelOpen(true);
+  }, []);
+
+  const handleToggleMobileSheet = useCallback(() => {
+    if (selectedPlaceKey) {
+      setCollapsedPlaceKey((current) => (current === selectedPlaceKey ? null : selectedPlaceKey));
+      return;
+    }
+    setCollapsedPlaceKey(null);
+    setIsPanelOpen((open) => !open);
+  }, [selectedPlaceKey]);
+
+  const handleOpenRouteSteps = useCallback(() => {
+    if (route?.meetupId) {
+      setSidebarTab('meetups');
+      if (shouldCollapseMobileSheetOnRoute(window.innerWidth)) {
+        setCollapsedPlaceKey(null);
+        setIsPanelOpen(false);
+      } else {
+        setIsPanelOpen(true);
+      }
+      return;
+    }
+
+    if (shouldCollapseMobileSheetOnRoute(window.innerWidth)) {
+      setCollapsedPlaceKey(null);
+    } else {
+      setIsPanelOpen(true);
+    }
+    selectedDetailsRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [route]);
 
   useEffect(() => {
     if (!selectedPlace) return;
@@ -307,14 +360,26 @@ function GeoportalContent() {
 
   useEffect(() => {
     const destination = pendingDirectionsRef.current;
-    if (!userLocation || !destination) return;
+    if (!userLocation || !destination) return undefined;
 
     pendingDirectionsRef.current = null;
     const destinationKey = destination.trainingSpotId
       || `${destination.longitude},${destination.latitude}`;
-    if (destinationKey !== selectedPlaceKey) return;
+    if (destinationKey !== selectedPlaceKey) return undefined;
 
-    getDirections(destination);
+    let cancelled = false;
+    getDirections(destination, null, {
+      onSuccess: () => {
+        if (cancelled) return;
+        if (shouldCollapseMobileSheetOnRoute(window.innerWidth)) {
+          setCollapsedPlaceKey(destinationKey);
+        }
+      },
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [getDirections, selectedPlaceKey, userLocation]);
 
   useEffect(() => {
@@ -331,12 +396,9 @@ function GeoportalContent() {
         data-panel-open={isPanelOpen}
         data-selected-place={Boolean(selectedPlace)}
         data-selected-sheet-height-vh="60"
+        data-mobile-sheet-collapsed={String(!isMobileSheetExpanded)}
         style={{
-          '--sheet-h': selectedPlace
-            ? '60dvh'
-            : isPanelOpen
-              ? 'calc(148px + env(safe-area-inset-bottom))'
-              : '88dvh',
+          '--sheet-h': mobileSheetHeight,
         }}
       >
         <main className="relative h-full min-h-0 min-w-0">
@@ -348,13 +410,14 @@ function GeoportalContent() {
             onRequestLocation={requestLocation}
             onStartPickingLocation={startPickingLocation}
             onCancelPickingLocation={cancelPickingLocation}
+            onOpenRouteSteps={handleOpenRouteSteps}
           />
         </main>
         <AuthPanel mode={authMode} setMode={setAuthMode} />
         <div
           role="group"
           aria-label="Filtrar lugares por tipo"
-          className={`pointer-events-none fixed left-3 right-16 top-3 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 motion-reduce:transition-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
+          className={`pointer-events-auto fixed left-2.5 right-14 top-2.5 z-30 flex justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap pb-1 transition-[left] duration-200 motion-reduce:transition-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:pointer-events-none md:absolute md:flex md:justify-center md:overflow-x-auto md:pb-1 ${isPanelOpen ? 'md:left-[calc(var(--sidebar-width)+2.75rem)]' : 'md:left-4'} md:right-4 md:top-20 min-[1280px]:md:right-[19rem] min-[1280px]:md:top-4`}
         >
           <EquipmentTypeFilters className="flex md:flex" />
         </div>
@@ -362,21 +425,21 @@ function GeoportalContent() {
           id="geoportal-sidebar"
           className={`absolute left-4 top-4 z-40 flex max-h-[calc(100dvh-16px-16px-64px-12px)] w-[min(var(--sidebar-width),calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-bg-elevated)] bg-[var(--color-brand-dark)]/95 p-4 text-[13px] shadow-[var(--shadow-panel)] backdrop-blur-sm transition-transform duration-200 motion-reduce:transition-none ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'} max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:left-auto max-md:top-auto max-md:z-40 max-md:h-[var(--sheet-h)] max-md:max-h-none max-md:w-full max-md:translate-x-0 max-md:rounded-t-[20px] max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:p-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-12px_32px_rgba(0,0,0,0.28)] max-md:transition-[height] max-md:duration-[250ms] max-md:ease-out max-md:motion-reduce:transition-none`}
         >
-          <div className={`flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-5 ${selectedPlace || !isPanelOpen ? 'max-md:py-0' : 'max-md:pt-3 max-md:pb-4'} md:flex-row`}>
+          <div className={`flex shrink-0 items-start justify-between gap-3 max-md:gap-0 max-md:px-4 ${isMobileSheetExpanded ? 'max-md:py-0' : 'max-md:pt-2 max-md:pb-2.5'} md:flex-row`}>
             <button
               type="button"
-              onClick={() => setIsPanelOpen((open) => !open)}
+              onClick={handleToggleMobileSheet}
               aria-label="Alternar altura del panel"
               title="Alternar altura del panel"
-              aria-expanded={isPanelOpen}
+              aria-expanded={isMobileSheetExpanded}
               aria-controls="geoportal-sidebar"
-              className={`flex w-full flex-col items-stretch text-left max-md:min-h-11 md:pointer-events-none md:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] ${selectedPlace || !isPanelOpen ? 'max-md:gap-0 max-md:py-0' : 'max-md:gap-3'}`}
+              className={`flex w-full flex-col items-stretch text-left max-md:min-h-11 md:pointer-events-none md:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)] ${isMobileSheetExpanded ? 'max-md:gap-0 max-md:py-0' : 'max-md:gap-1'}`}
             >
-              <span className={`hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block ${selectedPlace || !isPanelOpen ? 'max-md:mt-2' : ''}`} />
-              <span className={`truncate text-base font-semibold text-[var(--color-brand-light)] ${selectedPlace || !isPanelOpen ? 'max-md:py-2' : ''}`}>
+              <span className={`hidden h-1 w-9 self-center rounded-full bg-gray-400 max-md:block ${isMobileSheetExpanded ? 'max-md:mt-2' : ''}`} />
+              <span className={`truncate text-base font-semibold text-[var(--color-brand-light)] max-md:text-sm ${isMobileSheetExpanded ? 'max-md:py-2' : ''}`}>
                 Geoportal Deportivo Valle de Aburrá
               </span>
-              <span className={`truncate text-sm text-[var(--color-text-secondary)] md:block md:text-xs ${selectedPlace || !isPanelOpen ? 'max-md:hidden' : 'max-md:block'}`}>
+              <span className={`truncate text-sm text-[var(--color-text-secondary)] max-md:text-xs md:block md:text-xs ${isMobileSheetExpanded ? 'max-md:hidden' : 'max-md:block'}`}>
                 Lugares de entrenamiento, gimnasios y centros deportivos
               </span>
             </button>
@@ -384,7 +447,7 @@ function GeoportalContent() {
               <PanelLeftClose aria-hidden="true" className="h-4 w-4" />
             </button>
           </div>
-          <div className={`mt-4 min-h-0 flex-1 overflow-y-auto pr-1 max-md:mt-0 max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] ${selectedPlace || !isPanelOpen ? 'max-md:block' : 'max-md:hidden'} md:pb-0`}>
+          <div className={`mt-4 min-h-0 flex-1 overflow-y-auto pr-1 max-md:mt-0 max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] ${isMobileSheetExpanded ? 'max-md:block' : 'max-md:hidden'} md:pb-0`}>
             <div
               role="tablist"
               aria-label="Secciones del panel lateral"
@@ -439,7 +502,10 @@ function GeoportalContent() {
               </div>
             ) : (
               <div role="tabpanel" id="panel-meetups" aria-labelledby="tab-meetups">
-                <GlobalMeetupsPanel onRequestAuth={() => setAuthMode('login')} />
+                <GlobalMeetupsPanel
+                  onRequestAuth={() => setAuthMode('login')}
+                  onRouteViewed={handleMeetupRouteViewed}
+                />
               </div>
             )}
             {selectedPlace ? (

@@ -56,7 +56,7 @@ export function useDirections() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const getDirections = useCallback(async (destination, profileOverride = null) => {
+  const getDirections = useCallback(async (destination, profileOverride = null, { onSuccess } = {}) => {
     if (!userLocation) {
       setError('Consulta primero tu ubicación actual para calcular la ruta.');
       return false;
@@ -71,6 +71,7 @@ export function useDirections() {
       const result = await getRoute(userLocation, destination, { profile: activeProfile });
       if (requestId.current !== currentRequest) return false;
       setRoute(buildRouteState(result, userLocation, destination));
+      onSuccess?.();
       return true;
     } catch (reason) {
       if (requestId.current !== currentRequest) return false;

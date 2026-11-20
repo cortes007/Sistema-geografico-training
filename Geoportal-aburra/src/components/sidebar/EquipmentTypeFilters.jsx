@@ -5,7 +5,7 @@ export default function EquipmentTypeFilters({ className = '' }) {
   const { activeEquipmentTypes, toggleEquipmentType } = useMapContext();
 
   return (
-    <div className={`pointer-events-auto flex w-max max-w-full gap-2 max-md:gap-1 ${className}`}>
+    <div className={`pointer-events-auto flex w-max gap-2 max-md:gap-1.5 ${className}`}>
       {Object.values(EQUIPMENT_TYPES).map((type) => {
         const active = activeEquipmentTypes[type];
         const color = EQUIPMENT_TYPE_STYLES[type].color;
@@ -13,9 +13,9 @@ export default function EquipmentTypeFilters({ className = '' }) {
         return (
           <label
             key={type}
-            className={`has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)] has-[:focus-visible]:ring-offset-2 flex shrink-0 cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-xs font-medium shadow-sm transition-all duration-200 motion-reduce:transition-none [-webkit-tap-highlight-color:transparent] max-md:min-h-11 max-md:gap-0.5 max-md:px-0.5 max-md:text-[10px] ${
+            className={`has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)] has-[:focus-visible]:ring-offset-2 flex shrink-0 cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-xs font-medium shadow-sm transition-all duration-200 motion-reduce:transition-none [-webkit-tap-highlight-color:transparent] max-md:min-h-8 max-md:gap-1 max-md:px-2.5 max-md:py-1 max-md:text-[11px] ${
               active
-                ? 'border-[3px] text-gray-900'
+                ? 'border-[3px] max-md:border-2 text-gray-900'
                 : 'border border-gray-500 bg-white text-gray-500 hover:bg-gray-50'
             }`}
             style={{
@@ -27,15 +27,17 @@ export default function EquipmentTypeFilters({ className = '' }) {
               type="checkbox"
               checked={active}
               onChange={() => toggleEquipmentType(type)}
+              aria-label={EQUIPMENT_TYPE_STYLES[type].label}
               className="sr-only"
               style={{ accentColor: color }}
             />
             <span
               aria-hidden="true"
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              className="h-2.5 w-2.5 shrink-0 rounded-full max-md:h-2 max-md:w-2"
               style={{ backgroundColor: color, opacity: active ? 1 : 0.45 }}
             />
-            {EQUIPMENT_TYPE_STYLES[type].label}
+            <span className="sm:hidden">{EQUIPMENT_TYPE_STYLES[type].shortLabel}</span>
+            <span className="hidden sm:inline">{EQUIPMENT_TYPE_STYLES[type].label}</span>
           </label>
         );
       })}
